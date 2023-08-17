@@ -1,0 +1,22 @@
+{
+  "name": "headline-fights",
+  "version": "1.0.0",
+  "description": "Match the headline to the publication.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Joseph Baumgartel",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "mongoose": "^7.4.3",
+    "mongoose-findorcreate": "^4.0.0",
+    "passport": "^0.6.0",
+    "passport-local-mongoose": "^8.0.0",
+    "superagent": "^8.1.2"
+  }
+}
