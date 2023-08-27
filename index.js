@@ -10,14 +10,15 @@ const findOrCreate = require("mongoose-findorcreate");
 const winston = require("winston");
 const app = express();
 
-const date = new Date();
 var articleOneURL = "";
 var articleOneHeadline = "";
 var articleOneImgURL = "";
+var articleOneVideoURL = "";
 var articleTwoHTML = "";
 var articleTwoURL = "";
 var articleTwoHeadline = "";
 var articleTwoImgURL = "";
+var articleTwoVideoURL = "";
 
 app.use(express.static("public"));
 app.use(
@@ -37,18 +38,11 @@ if (port == null || port == "") {
 }
 app.listen(port);
 
+const { combine, timestamp, json } = winston.format;
 const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.json(),
-  defaultMeta: { service: "user-service" },
-  transports: [
-    //
-    // - Write all logs with importance level of `error` or less to `error.log`
-    // - Write all logs with importance level of `info` or less to `combined.log`
-    //
-    new winston.transports.File({ filename: "error.log", level: "error" }),
-    new winston.transports.File({ filename: "combined.log" }),
-  ],
+  level: process.env.LOG_LEVEL || "info",
+  format: combine(timestamp(), json()),
+  transports: [new winston.transports.Console(), new winston.transports.File({ filename: "combined.log" })],
 });
 
 mongoose.connect(process.env.DATABASE_CONNECTION_STRING, {
@@ -83,6 +77,9 @@ const headlineSchema = new mongoose.Schema({
   photo_url: String,
   photo_s3_id: String,
   photo_source_url: String,
+  video_url: String,
+  video_s3_id: String,
+  video_source_url: String,
   publish_date: Date,
   publication: String,
   article_url: String,
@@ -97,25 +94,25 @@ headlineSchema.plugin(findOrCreate);
 const User = new mongoose.model("User", userSchema);
 const Headline = new mongoose.model("Headline", headlineSchema);
 
-// const user = new User({ username: "Test", lastLogin: date });
-// user.save().then(() => {
-//   console.log("User saved.");
-// });
-
-function saveHeadline(newHeadline, newArticleURL, newImgURL) {
-  const headline = new Headline({ headline: newHeadline, article_url: newArticleURL, photo_source_url: newImgURL, publish_date: date });
+function saveHeadline(newHeadline, newArticleURL, newImgURL, newVideoURL, newPublication) {
+  const date = new Date();
+  const headline = new Headline({
+    headline: newHeadline,
+    article_url: newArticleURL,
+    photo_source_url: newImgURL,
+    video_source_url: newVideoURL,
+    publication: newPublication,
+    publish_date: date,
+  });
   headline.save().then(() => {
     console.log("Headline saved.");
   });
 }
 
 function getHeadlines() {
-  superagent.get(process.env.PUBLICATION_1).end((err, res) => {
+  superagent.get(process.env.PUBLICATION_1_URL).end((err, res) => {
     if (err) {
-      logger.log({
-        level: "error",
-        message: err,
-      });
+      logger.error(err);
       console.error("Error fetching the website:", err);
       return;
     }
@@ -124,20 +121,14 @@ function getHeadlines() {
       articleOneHeadline = $("div.stack_condensed h2").html();
       articleOneImgURL = $("div.stack_condensed img").attr("src");
       articleOneURL = $("div.stack_condensed a").attr("href");
-      saveHeadline(articleOneHeadline, articleOneURL, articleOneImgURL);
-      logger.log({
-        level: "info",
-        message: "New headline saved: " + articleOneHeadline,
-      });
+      saveHeadline(articleOneHeadline, articleOneURL, articleOneImgURL, articleOneVideoURL, process.env.PUBLICATION_1);
+      logger.info("New headline saved: " + articleOneHeadline);
     }
   });
 
-  superagent.get(process.env.PUBLICATION_2).end((err, res) => {
+  superagent.get(process.env.PUBLICATION_2_URL).end((err, res) => {
     if (err) {
-      logger.log({
-        level: "error",
-        message: err,
-      });
+      logger.error(err);
       console.error("Error fetching the website:", err);
       return;
     }
@@ -146,14 +137,15 @@ function getHeadlines() {
     let source = cheerio.load(articleTwoHTML);
     if (source("h3 a").html() != articleTwoHeadline) {
       articleTwoHeadline = source("h3 a").html();
-      articleTwoImgURL = source("img").attr("src");
-      articleTwoImgURL = articleTwoImgURL.slice(2, articleTwoImgURL.length);
+      if (source("img").attr("src") != null) {
+        articleTwoImgURL = source("img").attr("src");
+        articleTwoImgURL = articleTwoImgURL.slice(2, articleTwoImgURL.length);
+      } else if (source("video source").attr("src") != null) {
+        articleTwoVideoURL = source("video source").attr("src");
+      }
       articleTwoURL = source("h3 a").attr("href");
-      saveHeadline(articleTwoHeadline, articleTwoURL, articleTwoImgURL);
-      logger.log({
-        level: "info",
-        message: "New headline saved: " + articleTwoHeadline,
-      });
+      saveHeadline(articleTwoHeadline, articleTwoURL, articleTwoImgURL, articleTwoVideoURL, process.env.PUBLICATION_2);
+      logger.info("New headline saved: " + articleTwoHeadline);
     }
   });
 }
