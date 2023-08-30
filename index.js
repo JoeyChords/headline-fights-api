@@ -56,35 +56,44 @@ db.once("open", function () {
   console.log("We're connected to the database!");
 });
 
-const userSchema = new mongoose.Schema({
-  email: String,
-  username: String,
-  password: String,
-  date_joined: Date,
-  lastLogin: Date,
-  headlines: {
-    // the headlines the user has seen and rated
-    headline_id: Number,
-    publication: String,
-    chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
-    democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable
-    inflammatory_rating: Number, // number from 1 to 10 representing the disturbance the headline seems to want to cause
+const userSchema = new mongoose.Schema(
+  {
+    email: String,
+    username: String,
+    password: String,
+    date_joined: Date,
+    lastLogin: Date,
+    headlines: {
+      // the headlines the user has seen and rated
+      headline_id: Number,
+      publication: String,
+      chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
+      democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable
+      inflammatory_rating: Number, // number from 1 to 10 representing the disturbance the headline seems to want to cause
+    },
   },
-});
+  {
+    timestamps: true,
+  }
+);
 
-const headlineSchema = new mongoose.Schema({
-  headline: String,
-  photo_url: String,
-  photo_s3_id: String,
-  photo_source_url: String,
-  video_url: String,
-  video_s3_id: String,
-  video_source_url: String,
-  publish_date: Date,
-  publication: String,
-  article_url: String,
-  times_correctly_chosen: Number,
-});
+const headlineSchema = new mongoose.Schema(
+  {
+    headline: String,
+    photo_url: String,
+    photo_s3_id: String,
+    photo_source_url: String,
+    video_url: String,
+    video_s3_id: String,
+    video_source_url: String,
+    publication: String,
+    article_url: String,
+    times_correctly_chosen: Number,
+  },
+  {
+    timestamps: true,
+  }
+);
 
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
@@ -94,15 +103,24 @@ headlineSchema.plugin(findOrCreate);
 const User = new mongoose.model("User", userSchema);
 const Headline = new mongoose.model("Headline", headlineSchema);
 
+//returns a random headline
+app.route("/headlines").get(async (req, res) => {
+  try {
+    const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
+    res.send(randomHeadline);
+  } catch (err) {
+    console.log(err);
+    logger.error(err);
+  }
+});
+
 function saveHeadline(newHeadline, newArticleURL, newImgURL, newVideoURL, newPublication) {
-  const date = new Date();
   const headline = new Headline({
     headline: newHeadline,
     article_url: newArticleURL,
     photo_source_url: newImgURL,
     video_source_url: newVideoURL,
     publication: newPublication,
-    publish_date: date,
   });
   headline.save().then(() => {
     console.log("Headline saved.");
@@ -149,8 +167,6 @@ function getHeadlines() {
     }
   });
 }
-
-getHeadlines();
 
 setInterval(() => {
   getHeadlines();
