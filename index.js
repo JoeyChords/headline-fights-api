@@ -158,6 +158,7 @@ function getHeadlines() {
       if (source("img").attr("src") != null) {
         articleTwoImgURL = source("img").attr("src");
         articleTwoImgURL = articleTwoImgURL.slice(2, articleTwoImgURL.length);
+        articleTwoImgURL = "https://" + articleTwoImgURL;
       } else if (source("video source").attr("src") != null) {
         articleTwoVideoURL = source("video source").attr("src");
       }
