@@ -107,7 +107,17 @@ const Headline = new mongoose.model("Headline", headlineSchema);
 app.route("/headlines").get(async (req, res) => {
   try {
     const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
-    res.send(randomHeadline);
+    if (
+      randomHeadline[0].photo_source_url != null &&
+      randomHeadline[0].headline != null &&
+      randomHeadline[0].headline.slice(2, randomHeadline[0].headline.length) != "<"
+    ) {
+      res.send(randomHeadline);
+    } else {
+      Headline.deleteOne({ _id: randomHeadline[0]._id });
+      logger.info("Corrupt headline deleted: " + randomHeadline[0].headline);
+      res.redirect("/headlines");
+    }
   } catch (err) {
     console.log(err);
     logger.error(err);
