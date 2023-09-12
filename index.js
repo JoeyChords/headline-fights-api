@@ -111,7 +111,7 @@ app.route("/headlines").get(async (req, res) => {
       randomHeadline[0].photo_source_url != null &&
       randomHeadline[0].headline != null &&
       randomHeadline[0].headline.slice(0, 1) != "<" &&
-      randomHeadline[0].photo_source_url.slice(0, 1) != "h"
+      randomHeadline[0].photo_source_url.slice(0, 1) != "a"
     ) {
       res.send(randomHeadline);
     } else {
