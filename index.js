@@ -107,6 +107,7 @@ const Headline = new mongoose.model("Headline", headlineSchema);
 app.route("/headlines").get(async (req, res) => {
   try {
     const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
+    //Filter to find if all info needed is in the dcument and remove if it isn't
     if (
       randomHeadline[0].photo_source_url != null &&
       randomHeadline[0].headline != null &&
@@ -115,8 +116,11 @@ app.route("/headlines").get(async (req, res) => {
     ) {
       res.send(randomHeadline);
     } else {
-      Headline.deleteOne({ _id: randomHeadline[0]._id });
-      logger.info("Corrupt headline deleted: " + randomHeadline[0].headline);
+      Headline.findByIdAndRemove({
+        _id: randomHeadline[0]._id,
+      }).exec();
+
+      logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
       res.redirect("/headlines");
     }
   } catch (err) {
@@ -168,8 +172,11 @@ function getHeadlines() {
       articleTwoHeadline = source("h3 a").html();
       if (source("img").attr("src") != null) {
         articleTwoImgURL = source("img").attr("src");
-        articleTwoImgURL = articleTwoImgURL.slice(2, articleTwoImgURL.length);
-        articleTwoImgURL = "https://" + articleTwoImgURL;
+        //Add https to urls that start without it
+        if (articleTwoImgURL.slice(0, 1) != "h") {
+          articleTwoImgURL = articleTwoImgURL.slice(2, articleTwoImgURL.length);
+          articleTwoImgURL = "https://" + articleTwoImgURL;
+        }
       } else if (source("video source").attr("src") != null) {
         articleTwoVideoURL = source("video source").attr("src");
       }
