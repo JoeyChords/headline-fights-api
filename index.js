@@ -107,7 +107,12 @@ const Headline = new mongoose.model("Headline", headlineSchema);
 app.route("/headlines").get(async (req, res) => {
   try {
     const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
-    if (randomHeadline[0].photo_source_url != null && randomHeadline[0].headline != null && randomHeadline[0].headline.slice(0, 1) != "<") {
+    if (
+      randomHeadline[0].photo_source_url != null &&
+      randomHeadline[0].headline != null &&
+      randomHeadline[0].headline.slice(0, 1) != "<" &&
+      randomHeadline[0].photo_source_url.slice(0, 1) != "h"
+    ) {
       res.send(randomHeadline);
     } else {
       Headline.deleteOne({ _id: randomHeadline[0]._id });
