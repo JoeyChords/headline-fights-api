@@ -104,30 +104,37 @@ const User = new mongoose.model("User", userSchema);
 const Headline = new mongoose.model("Headline", headlineSchema);
 
 //returns a random headline
-app.route("/headlines").get(async (req, res) => {
-  try {
-    const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
-    //Filter to find if all info needed is in the dcument and remove if it isn't
-    if (
-      randomHeadline[0].photo_source_url != null &&
-      randomHeadline[0].headline != null &&
-      randomHeadline[0].headline.slice(0, 1) != "<" &&
-      randomHeadline[0].photo_source_url.slice(0, 1) != "a"
-    ) {
-      res.send(randomHeadline);
-    } else {
-      Headline.findByIdAndRemove({
-        _id: randomHeadline[0]._id,
-      }).exec();
+app
+  .route("/headlines")
+  .post(async (req, res) => {
+    if (req.query.accessToken == process.env.DATA_API_KEY) {
+      try {
+        const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
+        //Filter to find if all info needed is in the dcument and remove if it isn't
+        if (
+          randomHeadline[0].photo_source_url != null &&
+          randomHeadline[0].headline != null &&
+          randomHeadline[0].headline.slice(0, 1) != "<" &&
+          randomHeadline[0].photo_source_url.slice(0, 1) != "a"
+        ) {
+          res.send(randomHeadline);
+        } else {
+          Headline.findByIdAndRemove({
+            _id: randomHeadline[0]._id,
+          }).exec();
 
-      logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
-      res.redirect("/headlines");
+          logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
+          res.redirect("/headlines");
+        }
+      } catch (err) {
+        console.log(err);
+        logger.error(err);
+      }
     }
-  } catch (err) {
-    console.log(err);
-    logger.error(err);
-  }
-});
+  })
+  .get((req, res) => {
+    res.send("<h1>Access forbidden</h1>");
+  });
 
 function saveHeadline(newHeadline, newArticleURL, newImgURL, newVideoURL, newPublication) {
   const headline = new Headline({
