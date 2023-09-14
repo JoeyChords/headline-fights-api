@@ -5,10 +5,13 @@ const cheerio = require("cheerio");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const passport = require("passport");
-const passportLocalMongoose = require("passport-local-mongoose");
-const findOrCreate = require("mongoose-findorcreate");
 const winston = require("winston");
 const app = express();
+const bodyParser = require("body-parser");
+var LocalStrategy = require("passport-local");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+var cors = require("cors");
 
 var articleOneURL = "";
 var articleOneHeadline = "";
@@ -28,8 +31,12 @@ app.use(
     saveUninitialized: false,
   })
 );
+
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(cors());
+// parse application/json
+app.use(bodyParser.json());
 
 let port = process.env.PORT;
 if (port == null || port == "") {
@@ -63,14 +70,16 @@ const userSchema = new mongoose.Schema(
     password: String,
     date_joined: Date,
     lastLogin: Date,
-    headlines: {
-      // the headlines the user has seen and rated
-      headline_id: Number,
-      publication: String,
-      chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
-      democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable
-      inflammatory_rating: Number, // number from 1 to 10 representing the disturbance the headline seems to want to cause
-    },
+    headlines: [
+      {
+        // the headlines the user has seen and rated
+        headline_id: Number,
+        publication: String,
+        chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
+        democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable
+        inflammatory_rating: Number, // number from 1 to 10 representing the disturbance the headline seems to want to cause
+      },
+    ],
   },
   {
     timestamps: true,
@@ -94,11 +103,6 @@ const headlineSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-userSchema.plugin(passportLocalMongoose);
-userSchema.plugin(findOrCreate);
-headlineSchema.plugin(passportLocalMongoose);
-headlineSchema.plugin(findOrCreate);
 
 const User = new mongoose.model("User", userSchema);
 const Headline = new mongoose.model("Headline", headlineSchema);
@@ -135,6 +139,29 @@ app
   .get((req, res) => {
     res.send("<h1>Access forbidden</h1>");
   });
+
+app.route("/register").post(function (req, res) {
+  console.log(req.body);
+  console.log("received");
+  // User.register(
+  //   {
+  //     username: req.body.username,
+  //   },
+  //   req.body.password,
+  //   function (err, user) {
+  //     if (err) {
+  //       console.log(err);
+  //       res.redirect("/register");
+  //     } else {
+  //       passport.authenticate("local")(req, res, function () {
+  //         res.redirect("secrets");
+  //       });
+  //     }
+  //   }
+  // );
+});
+
+app.route("/login").post();
 
 function saveHeadline(newHeadline, newArticleURL, newImgURL, newVideoURL, newPublication) {
   const headline = new Headline({
@@ -197,20 +224,3 @@ function getHeadlines() {
 setInterval(() => {
   getHeadlines();
 }, 60000 * 60);
-
-passport.use(User.createStrategy());
-
-passport.serializeUser(function (user, cb) {
-  process.nextTick(function () {
-    cb(null, {
-      id: user.id,
-      username: user.username,
-    });
-  });
-});
-
-passport.deserializeUser(function (user, cb) {
-  process.nextTick(function () {
-    return cb(null, user);
-  });
-});
