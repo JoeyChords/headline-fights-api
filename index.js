@@ -168,7 +168,7 @@ app.route("/register").post(function (req, res) {
     })
     .then(() => {
       if (checkEmail != null) {
-        res.send({ error: "Email already in use" });
+        res.send([{ available: "False" }]);
       } else {
         const user = new User({
           name: req.body.name,
@@ -177,6 +177,7 @@ app.route("/register").post(function (req, res) {
         });
         user.save().then(() => {
           console.log("User saved.");
+          res.send([{ available: "True" }]);
         });
       }
     });
