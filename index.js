@@ -10,7 +10,7 @@ const app = express();
 const bodyParser = require("body-parser");
 var LocalStrategy = require("passport-local");
 const bcrypt = require("bcrypt");
-const saltRounds = 10;
+const saltFactor = 10;
 var cors = require("cors");
 
 var articleOneURL = "";
@@ -32,9 +32,10 @@ app.use(
   })
 );
 
+app.use(cors());
+
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(cors());
 // parse application/json
 app.use(bodyParser.json());
 
@@ -65,11 +66,9 @@ db.once("open", function () {
 
 const userSchema = new mongoose.Schema(
   {
+    name: String,
     email: String,
-    username: String,
     password: String,
-    date_joined: Date,
-    lastLogin: Date,
     headlines: [
       {
         // the headlines the user has seen and rated
@@ -85,6 +84,27 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre("save", function (next) {
+  var user = this;
+
+  // only hash the password if it has been modified (or is new)
+  if (!user.isModified("password")) return next();
+
+  // generate a salt
+  bcrypt.genSalt(saltFactor, function (err, salt) {
+    if (err) return next(err);
+
+    // hash the password using our new salt
+    bcrypt.hash(user.password, salt, function (err, hash) {
+      if (err) return next(err);
+
+      // override the cleartext password with the hashed one
+      user.password = hash;
+      return next();
+    });
+  });
+});
 
 const headlineSchema = new mongoose.Schema(
   {
@@ -141,24 +161,29 @@ app
   });
 
 app.route("/register").post(function (req, res) {
-  console.log(req.body);
-  console.log("received");
-  // User.register(
-  //   {
-  //     username: req.body.username,
-  //   },
-  //   req.body.password,
-  //   function (err, user) {
-  //     if (err) {
-  //       console.log(err);
-  //       res.redirect("/register");
-  //     } else {
-  //       passport.authenticate("local")(req, res, function () {
-  //         res.redirect("secrets");
-  //       });
-  //     }
-  //   }
-  // );
+  let checkEmail = null;
+  User.findOne({ email: req.body.email })
+    .then((doc) => {
+      checkEmail = doc;
+    })
+    .then(() => {
+      if (checkEmail != null) {
+        res.send({ error: "Email already in use" });
+      } else {
+        const user = new User({
+          name: req.body.name,
+          email: req.body.email,
+          password: req.body.password,
+        });
+        user.save().then(() => {
+          console.log("User saved.");
+        });
+      }
+    });
+});
+
+app.route("/login").get(function (req, res) {
+  res.redirect("http://localhost:3001/login");
 });
 
 app.route("/login").post();
