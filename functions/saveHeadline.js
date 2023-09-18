@@ -2,9 +2,8 @@ var Headline = require("../models/headline");
 
 //Create document for scraped headlines. Method takes an instance of one of the Article classes.
 function saveHeadline(article) {
-  console.log(article);
   //Filter so that unusable headlines aren't saved
-  if (article.headline != null && article.imgURL != null && article.headline.slice(0, 1) != "<") {
+  if (article.headline != "" && article.imgURL != "" && article.headline.slice(0, 1) != "<") {
     const headline = new Headline({
       headline: article.headline,
       article_url: article.url,

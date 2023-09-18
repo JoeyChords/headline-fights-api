@@ -18,6 +18,7 @@ const saltRounds = 10;
 const inProd = process.env.NODE_ENV === "production";
 
 app.use(express.static("public"));
+//Set Express sessions and session cookies
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -32,6 +33,7 @@ app.use(
   })
 );
 
+//Enable cross origin resource sharing for server API to client host
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 
 app.use(passport.initialize());
@@ -39,13 +41,15 @@ app.use(passport.session());
 // parse application/json
 app.use(bodyParser.json());
 
+//Set server port
 let port = process.env.PORT;
 if (port == null || port == "") {
   port = 3000;
-  console.log("Server started on port 3000");
+  console.log("Server started on port " + port);
 }
 app.listen(port);
 
+//Create logger
 const { combine, timestamp, json } = winston.format;
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
@@ -53,7 +57,8 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console(), new winston.transports.File({ filename: "combined.log" })],
 });
 
-mongoose.connect(process.env.LOCAL_DB, {
+//Connect to DB
+mongoose.connect(process.env.DATABASE_CONNECTION_STRING, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -61,9 +66,12 @@ mongoose.connect(process.env.LOCAL_DB, {
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", function () {
-  console.log("We're connected to the database!");
+  console.log("Connected to the database!");
 });
 
+//Use Passport authentication Middleware
+
+//Passport appends user details to Express session
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, {
@@ -74,12 +82,14 @@ passport.serializeUser(function (user, cb) {
   });
 });
 
+//Passport reads user details to Express session
 passport.deserializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, user);
   });
 });
 
+//Passport authentication starts from request to login route
 passport.use(
   "local",
   new LocalStrategy(
@@ -103,7 +113,7 @@ passport.use(
   )
 );
 
-//returns a random headline
+//Headlines route responds with a random headline
 app
   .route("/headlines")
   .post(async (req, res) => {
@@ -138,6 +148,7 @@ app
     res.send("<h1>Access forbidden</h1>");
   });
 
+//Check for existing email, then make new user with encrypted password
 app.route("/register").post(function (req, res) {
   let checkEmail = null;
   User.findOne({ email: req.body.email })
@@ -169,6 +180,7 @@ app.post("/login", passport.authenticate("local", { session: true }), function (
   }
 });
 
+//Use passport logout function
 app.post("/logout", function (req, res, next) {
   req.logout(function (err) {
     if (err) {
