@@ -1,6 +1,5 @@
 const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
-const cheerio = require("cheerio");
 var cors = require("cors");
 require("dotenv").config();
 const express = require("express");
@@ -9,21 +8,12 @@ const session = require("express-session");
 const mongoose = require("mongoose");
 const passport = require("passport");
 var LocalStrategy = require("passport-local");
-const superagent = require("superagent");
 const winston = require("winston");
+const getArticleOne = require("./functions/getArticleOne");
+const getArticleTwo = require("./functions/getArticleTwo");
 var User = require("./models/user");
 var Headline = require("./models/headline");
 const saltRounds = 10;
-
-var articleOneURL = "";
-var articleOneHeadline = "";
-var articleOneImgURL = "";
-var articleOneVideoURL = "";
-var articleTwoHTML = "";
-var articleTwoURL = "";
-var articleTwoHeadline = "";
-var articleTwoImgURL = "";
-var articleTwoVideoURL = "";
 
 const inProd = process.env.NODE_ENV === "production";
 
@@ -63,7 +53,7 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console(), new winston.transports.File({ filename: "combined.log" })],
 });
 
-mongoose.connect(process.env.DATABASE_CONNECTION_STRING, {
+mongoose.connect(process.env.LOCAL_DB, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -117,8 +107,8 @@ passport.use(
 app
   .route("/headlines")
   .post(async (req, res) => {
-    console.log(req.session);
-    console.log(req.session.passport);
+    // console.log(req.session);
+    // console.log(req.session.passport);
     if (req.query.accessToken == process.env.DATA_API_KEY) {
       try {
         const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
@@ -156,6 +146,7 @@ app.route("/register").post(function (req, res) {
     })
     .then(() => {
       if (checkEmail != null) {
+        console.log(checkEmail);
         res.send([{ available: "False" }]);
       } else {
         const user = new User({
@@ -163,6 +154,7 @@ app.route("/register").post(function (req, res) {
           email: req.body.email,
           password: req.body.password,
         });
+
         user.save().then(() => {
           console.log("User saved.");
           res.send([{ available: "True" }]);
@@ -186,76 +178,8 @@ app.post("/logout", function (req, res, next) {
   });
 });
 
-//Create document for scraped headlines
-function saveHeadline(newHeadline, newArticleURL, newImgURL, newVideoURL, newPublication) {
-  //Filter so that unusable headlines aren't saved
-  if (newHeadline != null && newImgURL != null && newHeadline.slice(0, 1) != "<") {
-    const headline = new Headline({
-      headline: newHeadline,
-      article_url: newArticleURL,
-      photo_source_url: newImgURL,
-      video_source_url: newVideoURL,
-      publication: newPublication,
-    });
-
-    headline.save().then(() => {
-      console.log("Headline saved.");
-    });
-  } else {
-    console.log("Headline corrupt. Not saved.");
-  }
-}
-
-function getHeadlines() {
-  superagent.get(process.env.PUBLICATION_1_URL).end((err, res) => {
-    if (err) {
-      logger.error(err);
-      console.error("Error fetching the website:", err);
-      return;
-    }
-    // Convert response to jquery searchable html
-    //Search through website for top headlines and images
-    const $ = cheerio.load(res.text);
-    if ($("div.stack_condensed h2").html() != articleOneHeadline) {
-      articleOneHeadline = $("div.stack_condensed h2").html();
-      articleOneImgURL = $("div.stack_condensed img").attr("src");
-      articleOneURL = $("div.stack_condensed a").attr("href");
-      saveHeadline(articleOneHeadline, articleOneURL, articleOneImgURL, articleOneVideoURL, process.env.PUBLICATION_1);
-      logger.info("New headline saved: " + articleOneHeadline);
-    }
-  });
-
-  superagent.get(process.env.PUBLICATION_2_URL).end((err, res) => {
-    if (err) {
-      logger.error(err);
-      console.error("Error fetching the website:", err);
-      return;
-    }
-    // Convert response to jquery searchable html
-    //Search through website for top headlines and images
-    const $ = cheerio.load(res.text);
-    articleTwoHTML = $("div.big-top").html();
-    let source = cheerio.load(articleTwoHTML);
-    if (source("h3 a").html() != articleTwoHeadline) {
-      articleTwoHeadline = source("h3 a").html();
-      if (source("img").attr("src") != null) {
-        articleTwoImgURL = source("img").attr("src");
-        //Add https to urls that start without it
-        if (articleTwoImgURL.slice(0, 1) != "h") {
-          articleTwoImgURL = articleTwoImgURL.slice(2, articleTwoImgURL.length);
-          articleTwoImgURL = "https://" + articleTwoImgURL;
-        }
-      } else if (source("video source").attr("src") != null) {
-        articleTwoVideoURL = source("video source").attr("src");
-      }
-      articleTwoURL = source("h3 a").attr("href");
-      saveHeadline(articleTwoHeadline, articleTwoURL, articleTwoImgURL, articleTwoVideoURL, process.env.PUBLICATION_2);
-      logger.info("New headline saved: " + articleTwoHeadline);
-    }
-  });
-}
-
 //Check for new headlines every hour and store new ones in db
 setInterval(() => {
-  getHeadlines();
+  getArticleOne();
+  getArticleTwo();
 }, 60000 * 60);
