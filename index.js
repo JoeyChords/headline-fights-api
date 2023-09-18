@@ -1,17 +1,19 @@
+const bcrypt = require("bcrypt");
+const bodyParser = require("body-parser");
+const cheerio = require("cheerio");
+var cors = require("cors");
 require("dotenv").config();
 const express = require("express");
-const superagent = require("superagent");
-const cheerio = require("cheerio");
-const mongoose = require("mongoose");
-const session = require("express-session");
-const passport = require("passport");
-const winston = require("winston");
 const app = express();
-const bodyParser = require("body-parser");
+const session = require("express-session");
+const mongoose = require("mongoose");
+const passport = require("passport");
 var LocalStrategy = require("passport-local");
-const bcrypt = require("bcrypt");
-const saltFactor = 10;
-var cors = require("cors");
+const superagent = require("superagent");
+const winston = require("winston");
+var User = require("./models/user");
+var Headline = require("./models/headline");
+const saltRounds = 10;
 
 var articleOneURL = "";
 var articleOneHeadline = "";
@@ -23,16 +25,24 @@ var articleTwoHeadline = "";
 var articleTwoImgURL = "";
 var articleTwoVideoURL = "";
 
+const inProd = process.env.NODE_ENV === "production";
+
 app.use(express.static("public"));
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
-    resave: false,
+    resave: true,
     saveUninitialized: false,
+    cookie: {
+      crentials: "include",
+      sameSite: `${inProd ? "none" : "lax"}`, // cross site // set lax while working with http:localhost, but none when in prod
+      secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
+      maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
+    },
   })
 );
 
-app.use(cors());
+app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -64,73 +74,51 @@ db.once("open", function () {
   console.log("We're connected to the database!");
 });
 
-const userSchema = new mongoose.Schema(
-  {
-    name: String,
-    email: String,
-    password: String,
-    headlines: [
-      {
-        // the headlines the user has seen and rated
-        headline_id: Number,
-        publication: String,
-        chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
-        democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable
-        inflammatory_rating: Number, // number from 1 to 10 representing the disturbance the headline seems to want to cause
-      },
-    ],
-  },
-  {
-    timestamps: true,
-  }
-);
-
-userSchema.pre("save", function (next) {
-  var user = this;
-
-  // only hash the password if it has been modified (or is new)
-  if (!user.isModified("password")) return next();
-
-  // generate a salt
-  bcrypt.genSalt(saltFactor, function (err, salt) {
-    if (err) return next(err);
-
-    // hash the password using our new salt
-    bcrypt.hash(user.password, salt, function (err, hash) {
-      if (err) return next(err);
-
-      // override the cleartext password with the hashed one
-      user.password = hash;
-      return next();
+passport.serializeUser(function (user, cb) {
+  process.nextTick(function () {
+    return cb(null, {
+      id: user.id,
+      username: user.name,
+      email: user.email,
     });
   });
 });
 
-const headlineSchema = new mongoose.Schema(
-  {
-    headline: String,
-    photo_url: String,
-    photo_s3_id: String,
-    photo_source_url: String,
-    video_url: String,
-    video_s3_id: String,
-    video_source_url: String,
-    publication: String,
-    article_url: String,
-    times_correctly_chosen: Number,
-  },
-  {
-    timestamps: true,
-  }
-);
+passport.deserializeUser(function (user, cb) {
+  process.nextTick(function () {
+    return cb(null, user);
+  });
+});
 
-const User = new mongoose.model("User", userSchema);
-const Headline = new mongoose.model("Headline", headlineSchema);
+passport.use(
+  "local",
+  new LocalStrategy(
+    {
+      usernameField: "email",
+      passwordField: "password",
+    },
+    async (email, password, done) => {
+      try {
+        const user = await User.findOne({ email: email });
+        if (!user) return done(null, false);
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return done(null, false);
+        // if passwords match return user
+        return done(null, user);
+      } catch (error) {
+        console.log(error);
+        return done(error, false);
+      }
+    }
+  )
+);
 
 //returns a random headline
 app
   .route("/headlines")
   .post(async (req, res) => {
+    console.log(req.session);
+    console.log(req.session.passport);
     if (req.query.accessToken == process.env.DATA_API_KEY) {
       try {
         const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
@@ -183,11 +171,20 @@ app.route("/register").post(function (req, res) {
     });
 });
 
-app.route("/login").get(function (req, res) {
-  res.redirect("http://localhost:3001/login");
+app.post("/login", passport.authenticate("local", { session: true }), function (req, res) {
+  if (req.user) {
+    res.json({ isSignedIn: "True" });
+  }
 });
 
-app.route("/login").post();
+app.post("/logout", function (req, res, next) {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    console.log("Logged out");
+  });
+});
 
 function saveHeadline(newHeadline, newArticleURL, newImgURL, newVideoURL, newPublication) {
   const headline = new Headline({
@@ -209,6 +206,8 @@ function getHeadlines() {
       console.error("Error fetching the website:", err);
       return;
     }
+    // Convert response to jquery searchable html
+    //Search through website for top headlines and images
     const $ = cheerio.load(res.text);
     if ($("div.stack_condensed h2").html() != articleOneHeadline) {
       articleOneHeadline = $("div.stack_condensed h2").html();
@@ -225,6 +224,8 @@ function getHeadlines() {
       console.error("Error fetching the website:", err);
       return;
     }
+    // Convert response to jquery searchable html
+    //Search through website for top headlines and images
     const $ = cheerio.load(res.text);
     articleTwoHTML = $("div.big-top").html();
     let source = cheerio.load(articleTwoHTML);
@@ -247,6 +248,7 @@ function getHeadlines() {
   });
 }
 
+//Check for new headlines every hour and store new ones in db
 setInterval(() => {
   getHeadlines();
 }, 60000 * 60);
