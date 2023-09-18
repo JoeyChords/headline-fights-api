@@ -122,7 +122,7 @@ app
     if (req.query.accessToken == process.env.DATA_API_KEY) {
       try {
         const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
-        //Filter to find if all info needed is in the dcument and remove if it isn't
+        //Filter to find if all info needed is in the document and remove if it isn't
         if (
           randomHeadline[0].photo_source_url != null &&
           randomHeadline[0].headline != null &&
@@ -186,17 +186,24 @@ app.post("/logout", function (req, res, next) {
   });
 });
 
+//Create document for scraped headlines
 function saveHeadline(newHeadline, newArticleURL, newImgURL, newVideoURL, newPublication) {
-  const headline = new Headline({
-    headline: newHeadline,
-    article_url: newArticleURL,
-    photo_source_url: newImgURL,
-    video_source_url: newVideoURL,
-    publication: newPublication,
-  });
-  headline.save().then(() => {
-    console.log("Headline saved.");
-  });
+  //Filter so that unusable headlines aren't saved
+  if (newHeadline != null && newImgURL != null && newHeadline.slice(0, 1) != "<") {
+    const headline = new Headline({
+      headline: newHeadline,
+      article_url: newArticleURL,
+      photo_source_url: newImgURL,
+      video_source_url: newVideoURL,
+      publication: newPublication,
+    });
+
+    headline.save().then(() => {
+      console.log("Headline saved.");
+    });
+  } else {
+    console.log("Headline corrupt. Not saved.");
+  }
 }
 
 function getHeadlines() {
