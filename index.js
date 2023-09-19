@@ -1,5 +1,7 @@
 const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
+const MongoStore = require("connect-mongo");
+var cookieParser = require("cookie-parser");
 var cors = require("cors");
 require("dotenv").config();
 const express = require("express");
@@ -17,29 +19,37 @@ const saltRounds = 10;
 
 const inProd = process.env.NODE_ENV === "production";
 
+app.use(cookieParser());
 app.use(express.static("public"));
+// parse application/json
+app.use(bodyParser.json());
+
+//Enable cross origin resource sharing for server API to client host
+app.use(cors({ credentials: true, origin: "http://localhost" }));
+
 //Set Express sessions and session cookies
 app.use(
   session({
+    name: "Headline Fights Session",
     secret: process.env.SESSION_SECRET,
     resave: true,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.DATABASE_CONNECTION_STRING,
+    }),
     cookie: {
-      crentials: "include",
+      credentials: "include",
+      httpOnly: true,
       sameSite: `${inProd ? "none" : "lax"}`, // cross site // set lax while working with http:localhost, but none when in prod
       secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
+      domain: "localhost",
     },
   })
 );
 
-//Enable cross origin resource sharing for server API to client host
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
-
 app.use(passport.initialize());
 app.use(passport.session());
-// parse application/json
-app.use(bodyParser.json());
 
 //Set server port
 let port = process.env.PORT;
@@ -82,7 +92,7 @@ passport.serializeUser(function (user, cb) {
   });
 });
 
-//Passport reads user details to Express session
+//Passport reads user details from session
 passport.deserializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, user);
@@ -117,7 +127,7 @@ passport.use(
 app
   .route("/headlines")
   .post(async (req, res) => {
-    // console.log(req.session);
+    console.log("Authenticated at game? " + req.isAuthenticated());
     // console.log(req.session.passport);
     if (req.query.accessToken == process.env.DATA_API_KEY) {
       try {
@@ -174,20 +184,27 @@ app.route("/register").post(function (req, res) {
     });
 });
 
-app.post("/login", passport.authenticate("local", { session: true }), function (req, res) {
-  if (req.user) {
-    res.json({ isSignedIn: "True" });
+app.post("/login", passport.authenticate("local", { session: true }), function (req, res, next) {
+  if (req.isAuthenticated()) {
+    return res.json({
+      isSignedIn: "True",
+      success: true,
+      message: "Successful Login",
+      user: req.user,
+    });
   }
 });
 
 //Use passport logout function
 app.post("/logout", function (req, res, next) {
+  console.log("Authenticated at logout? " + req.isAuthenticated());
+
   req.logout(function (err) {
     if (err) {
       return next(err);
     }
-    console.log("Logged out");
   });
+  res.send([{ loggedOut: "True" }]);
 });
 
 //Check for new headlines every hour and store new ones in db
