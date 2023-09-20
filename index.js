@@ -153,6 +153,8 @@ app
         console.log(err);
         logger.error(err);
       }
+    } else {
+      res.send("<h1>Access forbidden</h1>");
     }
   })
   .get((req, res) => {
