@@ -39,7 +39,6 @@ app.use(
     }),
     cookie: {
       credentials: "include",
-      httpOnly: true,
       sameSite: `${inProd ? "none" : "lax"}`, // cross site // set lax while working with http:localhost, but none when in prod
       secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
@@ -127,8 +126,10 @@ passport.use(
 app
   .route("/headlines")
   .post(async (req, res) => {
+    console.log(req);
     console.log("Authenticated at game? " + req.isAuthenticated());
-    // console.log(req.session.passport);
+    console.log("Cookies: ", req.cookies);
+
     if (req.query.accessToken == process.env.DATA_API_KEY) {
       try {
         const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
@@ -185,12 +186,13 @@ app.route("/register").post(function (req, res) {
 });
 
 app.post("/login", passport.authenticate("local", { session: true }), function (req, res, next) {
+  console.log(req);
   if (req.isAuthenticated()) {
     return res.json({
       isSignedIn: "True",
       success: true,
       message: "Successful Login",
-      user: req.user,
+      user: req.user.username,
     });
   }
 });
