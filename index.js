@@ -25,7 +25,7 @@ app.use(express.static("public"));
 app.use(bodyParser.json());
 
 //Enable cross origin resource sharing for server API to client host
-app.use(cors({ credentials: true, origin: "http://localhost" }));
+app.use(cors({ credentials: true, origin: "http://localhost:3001" }));
 
 //Set Express sessions and session cookies
 app.use(
@@ -126,7 +126,7 @@ passport.use(
 app
   .route("/headlines")
   .post(async (req, res) => {
-    console.log(req.query.accessToken);
+    //REMOVE THESE LINES AFTER COOKIES ARE FIXED
     console.log("Authenticated at game? " + req.isAuthenticated());
     console.log("Cookies: ", req.cookies);
 
