@@ -126,7 +126,7 @@ passport.use(
 app
   .route("/headlines")
   .post(async (req, res) => {
-    console.log(req);
+    console.log(req.query.accessToken);
     console.log("Authenticated at game? " + req.isAuthenticated());
     console.log("Cookies: ", req.cookies);
 
