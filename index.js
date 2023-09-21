@@ -24,8 +24,18 @@ app.use(express.static("public"));
 // parse application/json
 app.use(bodyParser.json());
 
+// const corsOptions = {
+//   origin: true,
+//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+//   credentials: true,
+//   preflightContinue: true,
+//   maxAge: 600,
+// };
+// app.options('*', cors(corsOptions));
+// app.use(cors(corsOptions));
+
 //Enable cross origin resource sharing for server API to client host
-app.use(cors({ credentials: true, origin: "http://localhost:3001" }));
+app.use(cors({ credentials: true, origin: "http://localhost" }));
 
 //Set Express sessions and session cookies
 app.use(
@@ -42,7 +52,7 @@ app.use(
       sameSite: `${inProd ? "none" : "lax"}`, // cross site // set lax while working with http:localhost, but none when in prod
       secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
-      domain: "localhost:3000",
+      domain: "localhost",
     },
   })
 );
@@ -185,6 +195,16 @@ app.route("/register").post(function (req, res) {
         });
       }
     });
+});
+
+app.get("/", (req, res) => {
+  //REMOVE THESE LINES AFTER COOKIES ARE FIXED
+  console.log("Authenticated at home? " + req.isAuthenticated());
+  console.log("Cookies: ", req.cookies);
+  return res.json({
+    success: true,
+    message: "Successful get",
+  });
 });
 
 app.post("/login", passport.authenticate("local", { session: true }), function (req, res, next) {
