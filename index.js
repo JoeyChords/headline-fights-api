@@ -208,7 +208,6 @@ app.get("/", (req, res) => {
 });
 
 app.post("/login", passport.authenticate("local", { session: true }), function (req, res, next) {
-  console.log(req);
   if (req.isAuthenticated()) {
     return res.json({
       isSignedIn: "True",
@@ -226,9 +225,10 @@ app.get("/logout", function (req, res, next) {
   req.logout(function (err) {
     if (err) {
       return next(err);
+    } else {
+      res.json({ loggedOut: "True" });
     }
   });
-  res.send([{ loggedOut: "True" }]);
 });
 
 //Check for new headlines every hour and store new ones in db
