@@ -39,7 +39,7 @@ app.use(bodyParser.json());
 // app.use(cors(corsOptions));
 
 //Enable cross origin resource sharing for server API to client host
-app.use(cors({ credentials: true, origin: originOfRequest }));
+app.use(cors({ credentials: true, origin: process.env.ORIGIN_PROD }));
 
 //Set Express sessions and session cookies
 app.use(
@@ -53,10 +53,10 @@ app.use(
     }),
     cookie: {
       credentials: "include",
-      sameSite: `${inProd ? "none" : "lax"}`, // cross site // set lax while working with http:localhost, but none when in prod
-      secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
+      sameSite: "none", // cross site // set lax while working with http:localhost, but none when in prod
+      secure: "true", // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
-      domain: senderDomain,
+      domain: process.env.DOMAIN_PROD,
     },
   })
 );
