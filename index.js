@@ -220,7 +220,7 @@ app.post("/login", passport.authenticate("local", { session: true }), function (
 });
 
 //Use passport logout function
-app.post("/logout", function (req, res, next) {
+app.get("/logout", function (req, res, next) {
   console.log("Authenticated at logout? " + req.isAuthenticated());
 
   req.logout(function (err) {
