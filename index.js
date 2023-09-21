@@ -35,7 +35,7 @@ app.use(bodyParser.json());
 // app.use(cors(corsOptions));
 
 //Enable cross origin resource sharing for server API to client host
-app.use(cors({ credentials: true, origin: "http://localhost" }));
+app.use(cors({ credentials: true, origin: `${inProd ? process.env.ORIGIN_PROD : process.env.ORIGIN_DEV}` }));
 
 //Set Express sessions and session cookies
 app.use(
