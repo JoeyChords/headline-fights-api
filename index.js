@@ -18,28 +18,23 @@ var Headline = require("./models/headline");
 const saltRounds = 10;
 
 const inProd = process.env.NODE_ENV === "production";
-const senderDomain = inProd ? process.env.DOMAIN_PROD : process.env.DOMAIN_DEV;
-const originOfRequest = inProd ? process.env.ORIGIN_PROD : process.env.ORIGIN_DEV;
-
-console.log(inProd + senderDomain + originOfRequest);
 
 app.use(cookieParser());
 app.use(express.static("public"));
+
 // parse application/json
 app.use(bodyParser.json());
 
-// const corsOptions = {
-//   origin: true,
-//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-//   credentials: true,
-//   preflightContinue: true,
-//   maxAge: 600,
-// };
-// app.options('*', cors(corsOptions));
-// app.use(cors(corsOptions));
-
 //Enable cross origin resource sharing for server API to client host
-app.use(cors({ credentials: true, origin: process.env.ORIGIN_PROD }));
+app.use(
+  cors({
+    origin: process.env.ORIGIN,
+    methods: ["GET", "PUT", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
+    credentials: true,
+    maxAge: 600,
+  })
+);
 
 //Set Express sessions and session cookies
 app.use(
@@ -52,11 +47,12 @@ app.use(
       mongoUrl: process.env.DATABASE_CONNECTION_STRING,
     }),
     cookie: {
-      credentials: "include",
-      sameSite: "none", // cross site // set lax while working with http:localhost, but none when in prod
-      secure: "true", // only https // auto when in development, true when in prod
+      httpOnly: true,
+      sameSite: `${inProd ? "none" : "lax"}`, // cross site // set lax while working with http:localhost, but none when in prod
+      secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
-      domain: process.env.DOMAIN_PROD,
+      domain: process.env.DOMAIN,
+      partitioned: true,
     },
   })
 );
@@ -89,7 +85,7 @@ mongoose.connect(process.env.DATABASE_CONNECTION_STRING, {
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", function () {
-  console.log("Connected to the database!");
+  console.log("Connected to the database");
 });
 
 //Use Passport authentication Middleware
@@ -136,15 +132,13 @@ passport.use(
   )
 );
 
-//Headlines route responds with a random headline
+//Headlines route responds with a random headline if the user is logged in
 app
   .route("/headlines")
   .post(async (req, res) => {
-    //REMOVE THESE LINES AFTER COOKIES ARE FIXED
-    console.log("Authenticated at game? " + req.isAuthenticated());
-    console.log("Cookies: ", req.cookies);
+    const userLoggedIn = req.isAuthenticated();
 
-    if (req.query.accessToken == process.env.DATA_API_KEY) {
+    if (userLoggedIn) {
       try {
         const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
         //Filter to find if all info needed is in the document and remove if it isn't
@@ -154,7 +148,7 @@ app
           randomHeadline[0].headline.slice(0, 1) != "<" &&
           randomHeadline[0].photo_source_url.slice(0, 1) != "a"
         ) {
-          res.send(randomHeadline);
+          res.json({ headline: randomHeadline[0], isAuthenticated: userLoggedIn, user: req.user });
         } else {
           Headline.findByIdAndRemove({
             _id: randomHeadline[0]._id,
@@ -168,7 +162,7 @@ app
         logger.error(err);
       }
     } else {
-      res.send("<h1>Access forbidden</h1>");
+      res.json({ isAuthenticated: userLoggedIn });
     }
   })
   .get((req, res) => {
@@ -184,7 +178,6 @@ app.route("/register").post(function (req, res) {
     })
     .then(() => {
       if (checkEmail != null) {
-        console.log(checkEmail);
         res.send([{ available: "False" }]);
       } else {
         const user = new User({
@@ -194,7 +187,7 @@ app.route("/register").post(function (req, res) {
         });
 
         user.save().then(() => {
-          console.log("User saved.");
+          logger.info("User saved.");
           res.send([{ available: "True" }]);
         });
       }
@@ -202,13 +195,19 @@ app.route("/register").post(function (req, res) {
 });
 
 app.get("/", (req, res) => {
-  //REMOVE THESE LINES AFTER COOKIES ARE FIXED
-  console.log("Authenticated at home? " + req.isAuthenticated());
-  console.log("Cookies: ", req.cookies);
-  return res.json({
-    success: true,
-    message: "Successful get",
-  });
+  return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
+});
+
+app.get("/dashboard", (req, res) => {
+  return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
+});
+
+app.get("/game", (req, res) => {
+  return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
+});
+
+app.get("/settings", (req, res) => {
+  return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
 });
 
 app.post("/login", passport.authenticate("local", { session: true }), function (req, res, next) {
@@ -217,15 +216,13 @@ app.post("/login", passport.authenticate("local", { session: true }), function (
       isSignedIn: "True",
       success: true,
       message: "Successful Login",
-      user: req.user.username,
+      user: req.user.name,
     });
   }
 });
 
 //Use passport logout function
 app.get("/logout", function (req, res, next) {
-  console.log("Authenticated at logout? " + req.isAuthenticated());
-
   req.logout(function (err) {
     if (err) {
       return next(err);
