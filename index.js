@@ -52,6 +52,7 @@ app.use(
       secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
       domain: process.env.DOMAIN,
+      path: "/",
       partitioned: true,
     },
   })
