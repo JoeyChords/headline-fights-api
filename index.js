@@ -49,10 +49,11 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      sameSite: "none", // cross site // set lax while working with http:localhost, but none when in prod
+      sameSite: "strict", // cross site // set lax while working with http:localhost, but none when in prod
       secure: "true", // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
       domain: process.env.DOMAIN,
+      path: "/",
     },
   })
 );
