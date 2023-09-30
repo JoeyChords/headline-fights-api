@@ -179,7 +179,7 @@ app.route("/register").post(function (req, res) {
     })
     .then(() => {
       if (checkEmail != null) {
-        res.send([{ available: "False" }]);
+        res.json({ available: "False" });
       } else {
         const user = new User({
           name: req.body.name,
@@ -189,7 +189,7 @@ app.route("/register").post(function (req, res) {
 
         user.save().then(() => {
           logger.info("User saved.");
-          res.send([{ available: "True" }]);
+          res.json({ available: "True" });
         });
       }
     });
