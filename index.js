@@ -51,7 +51,7 @@ app.use(
 //Set Express sessions and session cookies
 app.use(
   session({
-    name: "Headline Fights Session",
+    name: "_Session",
     secret: process.env.SESSION_SECRET,
     resave: true,
     saveUninitialized: false,
