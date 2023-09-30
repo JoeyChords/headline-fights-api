@@ -30,7 +30,18 @@ app.use(
   cors({
     origin: process.env.ORIGIN,
     methods: ["GET", "PUT", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-CSRF-Token",
+      "X-Requested-With",
+      "Accept",
+      "Accept-Version",
+      "Content-Length",
+      "Content-MD5",
+      "Date",
+      "X-Api-Version",
+    ],
     credentials: true,
     maxAge: 600,
   })
