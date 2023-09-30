@@ -65,6 +65,7 @@ app.use(
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
       domain: process.env.DOMAIN,
       path: "/",
+      partitioned: true,
     },
   })
 );
