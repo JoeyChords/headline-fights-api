@@ -29,20 +29,9 @@ app.use(bodyParser.json());
 app.use(
   cors({
     origin: process.env.ORIGIN,
-    preflightContinue: true,
     methods: ["GET", "PUT", "POST"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-CSRF-Token",
-      "X-Requested-With",
-      "Accept",
-      "Accept-Version",
-      "Content-Length",
-      "Content-MD5",
-      "Date",
-      "X-Api-Version",
-    ],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+    exposedHeaders: ["Set-Cookie", "Authorization"],
     credentials: true,
     maxAge: 600,
   })
@@ -64,8 +53,6 @@ app.use(
       secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
       maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
       domain: process.env.DOMAIN,
-      path: "/",
-      partitioned: true,
     },
   })
 );
