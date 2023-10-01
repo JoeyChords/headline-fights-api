@@ -183,7 +183,7 @@ app.route("/register").post(function (req, res) {
       } else {
         const user = new User({
           name: req.body.name,
-          email: req.body.email,
+          email: req.body.email.toLowerCase(),
           password: req.body.password,
         });
 
