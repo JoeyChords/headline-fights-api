@@ -26,5 +26,27 @@ pub1 and pub2 on 2 sides of screen with just recognizability and negativity scor
 signed in user sees own choices vs community choices. Just score bars on top of each other. Out of 100 percent, the percentage of times they chose those things.
 
 
+{
+    name: String,
+    email: String,
+    password: String,
+    headlines: [
+      {
+        // the headlines the user has seen and rated
+        headline_id: Number,
+        publication: String,
+        chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
+        democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable
+        inflammatory_rating: Number, // number from 1 to 10 representing the disturbance the headline seems to want to cause
+      },
+    ],
+  },
 
+db.users.updateOne({name:'Test 17'}, {$push:{headlines:{headline_id: 3}}})
 
+db.users.findOne({name:'Test 17'}) then iterate through headlines ids to test against current
+headline id. If a match, get another headline. If no match, send over.
+
+db.users.find({photo_source_url:null})
+
+set headline stat fields to 0, then use $inc to increment. Can't increment from null.

@@ -141,6 +141,7 @@ app
 
     if (userLoggedIn) {
       try {
+        //Get random headline
         const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
         //Filter to find if all info needed is in the document and remove if it isn't
         if (
