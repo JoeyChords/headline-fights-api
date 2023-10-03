@@ -8,9 +8,9 @@ const userSchema = new mongoose.Schema(
     email: String,
     password: String,
     headlines: [
+      // the headlines the user has seen and rated
       {
-        // the headlines the user has seen and rated
-        headline_id: Number,
+        headline_id: String,
         publication: String,
         chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
         democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable

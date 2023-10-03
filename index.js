@@ -1,21 +1,21 @@
 const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
 const MongoStore = require("connect-mongo");
-var cookieParser = require("cookie-parser");
-var cors = require("cors");
-require("dotenv").config();
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
 const express = require("express");
 const app = express();
 const session = require("express-session");
 const mongoose = require("mongoose");
 const passport = require("passport");
-var LocalStrategy = require("passport-local");
+const LocalStrategy = require("passport-local");
 const winston = require("winston");
 const getArticleOne = require("./functions/getArticleOne");
 const getArticleTwo = require("./functions/getArticleTwo");
-var User = require("./models/user");
-var Headline = require("./models/headline");
+const User = require("./models/user");
+const Headline = require("./models/headline");
 const saltRounds = 10;
+require("dotenv").config();
 
 const inProd = process.env.NODE_ENV === "production";
 
@@ -133,41 +133,105 @@ passport.use(
   )
 );
 
-//Headlines route responds with a random headline if the user is logged in
+/**
+ * Headlines route responds with a random headline if the user is logged in
+ */
 app
   .route("/headlines")
   .post(async (req, res) => {
     const userLoggedIn = req.isAuthenticated();
+    let userDocument = {};
+    let userFeedback = {};
+    let userFeedbackHeadlineID = {};
+    let headlineDocument = {};
 
     if (userLoggedIn) {
+      /**
+       * Get the user document for use later to test if new random headlines have been seen
+       * already by the user.
+       */
+      userDocument = await User.findOne({ _id: req.user.id });
+      /**
+       * Check to see if there has been user feedback about headlines from the FE.
+       */
+      if (req.body.user) {
+        userFeedback = req.body;
+        /**
+         * Update the user document with user feedback about headlines that have been seen
+         */
+        userDocument = await User.findOneAndUpdate(
+          { _id: userFeedback.user },
+          {
+            $push: {
+              headlines: {
+                headline_id: userFeedback.headline,
+                publication: userFeedback.publicationAnswer,
+                chose_correctly: userFeedback.publicationCorrect,
+              },
+            },
+          }
+        );
+        /**
+         * Update the headline document related to the user's feedback.
+         */
+        headlineDocument = await Headline.findOne({ _id: userFeedback.headline });
+      }
       try {
-        //Get random headline
+        /**
+         * Get random headline
+         */
         const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
-        //Filter to find if all info needed is in the document and remove if it isn't
+        /**
+         * Filter to find if all info needed is in the document
+         */
         if (
-          randomHeadline[0].photo_source_url != null &&
-          randomHeadline[0].headline != null &&
-          randomHeadline[0].headline.slice(0, 1) != "<" &&
-          randomHeadline[0].photo_source_url.slice(0, 1) != "a"
+          randomHeadline[0].photo_source_url === null ||
+          randomHeadline[0].headline === null ||
+          randomHeadline[0].headline.slice(0, 1) === "<" ||
+          randomHeadline[0].photo_source_url.slice(0, 1) === "a"
         ) {
-          res.json({ headline: randomHeadline[0], isAuthenticated: userLoggedIn, user: req.user });
-        } else {
+          /**
+           * Delete headline if it is missing info
+           */
           Headline.findByIdAndRemove({
             _id: randomHeadline[0]._id,
           }).exec();
 
           logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
-          res.redirect("/headlines");
+          /**
+           * If headline was deleted, get a new random headline
+           */
+          res.json({ isAuthenticated: userLoggedIn, getNewHeadline: "true" });
+        } else {
+          /**
+           * Send random headline if all info is in it and the user has never seen it.
+           * Get a new headline if the user has seen it.
+           */
+          const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === userFeedback.headline);
+
+          if (headlineSeen === undefined) {
+            res.json({ headline: randomHeadline[0], isAuthenticated: userLoggedIn, user: req.user });
+          } else {
+            console.log("Headline seen. Fetching new random headline.");
+            res.json({ isAuthenticated: userLoggedIn, getNewHeadline: "true" });
+          }
         }
       } catch (err) {
         console.log(err);
         logger.error(err);
       }
     } else {
+      /**
+       * If user is not logged in, do not send headline.
+       * Tell FE user not logged in.
+       */
       res.json({ isAuthenticated: userLoggedIn });
     }
   })
   .get((req, res) => {
+    /**
+     * GET requests forbidden
+     */
     res.send("<h1>Access forbidden</h1>");
   });
 
