@@ -1,4 +1,4 @@
-var Headline = require("../models/headline");
+const Headline = require("../models/headline");
 
 //Create document for scraped headlines. Method takes an instance of one of the Article classes.
 function saveHeadline(article) {

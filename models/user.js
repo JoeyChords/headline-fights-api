@@ -8,8 +8,8 @@ const userSchema = new mongoose.Schema(
     email: String,
     password: String,
     headlines: [
+      // the headlines the user has seen and rated
       {
-        // the headlines the user has seen and rated
         headline_id: Number,
         publication: String,
         chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
