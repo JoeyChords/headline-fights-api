@@ -142,6 +142,7 @@ app
     const userLoggedIn = req.isAuthenticated();
     let userDocument = {};
     let userFeedback = {};
+    let userFeedbackHeadlineID = {};
     let headlineDocument = {};
 
     if (userLoggedIn) {
@@ -158,7 +159,18 @@ app
         /**
          * Update the user document with user feedback about headlines that have been seen
          */
-        userDocument = await User.findOne({ _id: userFeedback.user });
+        userDocument = await User.findOneAndUpdate(
+          { _id: userFeedback.user },
+          {
+            $push: {
+              headlines: {
+                headline_id: userFeedback.headline,
+                publication: userFeedback.publicationAnswer,
+                chose_correctly: userFeedback.publicationCorrect,
+              },
+            },
+          }
+        );
         /**
          * Update the headline document related to the user's feedback.
          */
@@ -195,10 +207,9 @@ app
            * Send random headline if all info is in it and the user has never seen it.
            * Get a new headline if the user has seen it.
            */
-          const headlinesSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === userFeedback.headline);
+          const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === userFeedback.headline);
 
-          if (headlinesSeen === undefined) {
-            console.log(headlinesSeen);
+          if (headlineSeen === undefined) {
             res.json({ headline: randomHeadline[0], isAuthenticated: userLoggedIn, user: req.user });
           } else {
             console.log("Headline seen. Fetching new random headline.");
