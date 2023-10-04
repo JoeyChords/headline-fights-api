@@ -5,11 +5,12 @@ const mongoose = require("mongoose");
 
 const headlineStatSchema = new mongoose.Schema(
   {
-    times_chosen_correctly: Number,
+    name: String,
+    times_seen: Number,
     times_pub_1_chosen_correctly: Number,
     times_pub_1_chosen_incorrectly: Number,
     times_pub_2_chosen_correctly: Number,
-    times_pub_2_chosen_falsely: Number,
+    times_pub_2_chosen_incorrectly: Number,
   },
   {
     timestamps: true,

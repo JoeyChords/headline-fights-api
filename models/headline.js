@@ -12,6 +12,7 @@ const headlineSchema = new mongoose.Schema(
     publication: String,
     article_url: String,
     times_correctly_chosen: Number,
+    times_incorrectly_chosen: Number,
   },
   {
     timestamps: true,
