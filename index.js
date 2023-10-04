@@ -14,6 +14,8 @@ const getArticleOne = require("./functions/getArticleOne");
 const getArticleTwo = require("./functions/getArticleTwo");
 const User = require("./models/user");
 const Headline = require("./models/headline");
+const HeadlineStat = require("./models/headlineStat");
+const saveUserFeedback = require("./functions/saveUserFeedback");
 const saltRounds = 10;
 require("dotenv").config();
 
@@ -49,9 +51,9 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      sameSite: `${inProd ? "lax" : "lax"}`, // cross site // set lax while working with http:localhost, but none when in prod
-      secure: `${inProd ? "true" : "auto"}`, // only https // auto when in development, true when in prod
-      maxAge: 1000 * 60 * 60 * 24 * 14, // expiration time
+      sameSite: `${inProd ? "lax" : "lax"}`,
+      secure: `${inProd ? "true" : "auto"}`,
+      maxAge: 1000 * 60 * 60 * 24 * 14,
       domain: process.env.DOMAIN,
       path: "/",
     },
@@ -61,7 +63,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-//Set server port
 let port = process.env.PORT;
 if (port == null || port == "") {
   port = 3000;
@@ -69,7 +70,6 @@ if (port == null || port == "") {
 }
 app.listen(port);
 
-//Create logger
 const { combine, timestamp, json } = winston.format;
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
@@ -77,7 +77,6 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console(), new winston.transports.File({ filename: "combined.log" })],
 });
 
-//Connect to DB
 mongoose.connect(process.env.DATABASE_CONNECTION_STRING, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -89,9 +88,6 @@ db.once("open", function () {
   console.log("Connected to the database");
 });
 
-//Use Passport authentication Middleware
-
-//Passport appends user details to Express session
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, {
@@ -102,14 +98,12 @@ passport.serializeUser(function (user, cb) {
   });
 });
 
-//Passport reads user details from session
 passport.deserializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, user);
   });
 });
 
-//Passport authentication starts from request to login route
 passport.use(
   "local",
   new LocalStrategy(
@@ -142,8 +136,6 @@ app
     const userLoggedIn = req.isAuthenticated();
     let userDocument = {};
     let userFeedback = {};
-    let userFeedbackHeadlineID = {};
-    let headlineDocument = {};
 
     if (userLoggedIn) {
       /**
@@ -157,7 +149,7 @@ app
       if (req.body.user) {
         userFeedback = req.body;
         /**
-         * Update the user document with user feedback about headlines that have been seen
+         * Update the user document with user feedback about headlines the user has seen
          */
         userDocument = await User.findOneAndUpdate(
           { _id: userFeedback.user },
@@ -172,9 +164,73 @@ app
           }
         );
         /**
-         * Update the headline document related to the user's feedback.
+         * Update the headline document with the user's feedback.
+         * Increment if a user guessed it right or wrong.
+         *
+         * Also update the statistics document to keep track of overall stats.
          */
-        headlineDocument = await Headline.findOne({ _id: userFeedback.headline });
+        if (userFeedback.publicationCorrect) {
+          const headlineDocument = await Headline.findOneAndUpdate(
+            { _id: userFeedback.headline },
+            {
+              $inc: {
+                times_correctly_chosen: 1,
+              },
+            }
+          );
+          if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
+            const statistics = await HeadlineStat.findOneAndUpdate(
+              { _id: process.env.STATISTICS_DOCUMENT_ID },
+              {
+                $inc: {
+                  times_seen: 1,
+                  times_pub_1_chosen_correctly: 1,
+                },
+              }
+            );
+          } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
+            const statistics = await HeadlineStat.findOneAndUpdate(
+              { _id: process.env.STATISTICS_DOCUMENT_ID },
+              {
+                $inc: {
+                  times_seen: 1,
+                  times_pub_2_chosen_correctly: 1,
+                },
+              }
+            );
+          }
+        } else if (!userFeedback.publicationCorrect) {
+          const headlineDocument = await Headline.findOneAndUpdate(
+            { _id: userFeedback.headline },
+            {
+              $inc: {
+                times_incorrectly_chosen: 1,
+              },
+            }
+          );
+
+          if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
+            const statistics = await HeadlineStat.findOneAndUpdate(
+              { _id: process.env.STATISTICS_DOCUMENT_ID },
+              {
+                $inc: {
+                  times_seen: 1,
+                  times_pub_1_chosen_incorrectly: 1,
+                },
+              }
+            );
+          } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
+            const statistics = await HeadlineStat.findOneAndUpdate(
+              { _id: process.env.STATISTICS_DOCUMENT_ID },
+              {
+                $inc: {
+                  times_seen: 1,
+                  times_pub_2_chosen_incorrectly: 1,
+                },
+              }
+            );
+          }
+        }
       }
       try {
         /**
@@ -223,7 +279,7 @@ app
     } else {
       /**
        * If user is not logged in, do not send headline.
-       * Tell FE user not logged in.
+       * Tell FE that user is not logged in.
        */
       res.json({ isAuthenticated: userLoggedIn });
     }
@@ -302,4 +358,4 @@ app.get("/logout", function (req, res, next) {
 setInterval(() => {
   getArticleOne();
   getArticleTwo();
-}, 60000 * 60);
+}, 60000 * 180);
