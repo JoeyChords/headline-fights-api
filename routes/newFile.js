@@ -1,13 +1,4 @@
-const express = require("express");
-const router = express.Router();
-const winston = require("winston");
-const calculateAccuracyData = require("../functions/calculateAccuracyData");
-const { combine, timestamp, json } = winston.format;
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
-  format: combine(timestamp(), json()),
-  transports: [new winston.transports.Console(), new winston.transports.File({ filename: "combined.log" })],
-});
+const { router } = require("./headlines");
 
 /**
  * Headlines route responds with a random headline if the user is logged in
@@ -16,7 +7,6 @@ router.post("/", async (req, res) => {
   const userLoggedIn = req.isAuthenticated();
   let userDocument = {};
   let userFeedback = {};
-  let statistics = {};
 
   if (userLoggedIn) {
     /**
@@ -25,7 +15,6 @@ router.post("/", async (req, res) => {
      * seen, there is no body, and we don't want to update any user.
      */
     userDocument = await User.findOne({ _id: req.user.id });
-    statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
     /**
      * Check to see if there has been user feedback about headlines from the FE.
      */
@@ -65,7 +54,7 @@ router.post("/", async (req, res) => {
           }
         );
         if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
-          statistics = await HeadlineStat.findOneAndUpdate(
+          const statistics = await HeadlineStat.findOneAndUpdate(
             { _id: process.env.STATISTICS_DOCUMENT_ID },
             {
               $inc: {
@@ -153,13 +142,22 @@ router.post("/", async (req, res) => {
 
         if (headlineSeen === undefined) {
           const userHeadlines = userDocument.headlines;
-          const accuracyData = calculateAccuracyData(userHeadlines, statistics);
+          const userHeadlineCount = userHeadlines.length;
+          const pub1Only = array.filter((userHeadlines) => userHeadlines.publication === PUBLICATION_1);
+          const pub1CorrectCount = array.reduce((counter, pub1Only) => (userHeadlines.chose_correctly === true ? ++counter : counter), 0);
+          const pub2Only = array.filter((userHeadlines) => userHeadlines.publication === PUBLICATION_2);
+          const pub2CorrectCount = array.reduce((counter, pub2Only) => (userHeadlines.chose_correctly === true ? ++counter : counter), 0);
+          const pub1CorrectPercent = (pub1CorrectCount / userHeadlineCount) * 100;
+          const pub2CorrectPercent = (pub2CorrectCount / userHeadlineCount) * 100;
 
           res.json({
             headline: randomHeadline[0],
             isAuthenticated: userLoggedIn,
             user: req.user,
-            publicationStats: accuracyData,
+            userPub1Percent: pub1CorrectPercent,
+            userPub2Percent: pub2CorrectPercent,
+            crowdPub1Percent: 0,
+            crowdPub2Percent: 0,
           });
         } else {
           console.log("Headline seen. Fetching new random headline.");
@@ -178,12 +176,3 @@ router.post("/", async (req, res) => {
     res.json({ isAuthenticated: userLoggedIn });
   }
 });
-
-router.get("/", (req, res) => {
-  /**
-   * GET requests forbidden
-   */
-  res.send("<h1>Access forbidden</h1>");
-});
-
-module.exports = router;
