@@ -31,4 +31,6 @@ signed in user sees own choices vs community choices. Just score bars on top of 
 
 
 
+db.headlines.updateOne({times_incorrectly_chosen: {$gt:0}}, {$set:{times_incorrectly_chosen: {$gt:0}}})
 
+db.users.updateOne({name:'Test 17'}, {$push:{headlines:{headline_id: 67, publication: "cnn", chose_correctly: true}}})
