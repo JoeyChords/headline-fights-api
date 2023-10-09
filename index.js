@@ -9,7 +9,6 @@ const session = require("express-session");
 const mongoose = require("mongoose");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
-const winston = require("winston");
 const getArticleOne = require("./functions/getArticleOne");
 const getArticleTwo = require("./functions/getArticleTwo");
 const User = require("./models/user");
@@ -17,6 +16,13 @@ const Headline = require("./models/headline");
 const HeadlineStat = require("./models/headlineStat");
 const saveUserFeedback = require("./functions/saveUserFeedback");
 const saltRounds = 10;
+const headlines = require("./routes/headlines");
+const logout = require("./routes/logout");
+const login = require("./routes/login");
+const register = require("./routes/register");
+const settings = require("./routes/settings");
+const dashboard = require("./routes/dashboard");
+const game = require("./routes/game");
 require("dotenv").config();
 
 const inProd = process.env.NODE_ENV === "production";
@@ -63,19 +69,20 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use("/headlines", headlines);
+app.use("/dashboard", dashboard);
+app.use("/game", game);
+app.use("/login", login);
+app.use("/logout", logout);
+app.use("/register", register);
+app.use("/settings", settings);
+
 let port = process.env.PORT;
 if (port == null || port == "") {
   port = 3000;
   console.log("Server started on port " + port);
 }
 app.listen(port);
-
-const { combine, timestamp, json } = winston.format;
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
-  format: combine(timestamp(), json()),
-  transports: [new winston.transports.Console(), new winston.transports.File({ filename: "combined.log" })],
-});
 
 mongoose.connect(process.env.DATABASE_CONNECTION_STRING, {
   useNewUrlParser: true,
@@ -127,234 +134,13 @@ passport.use(
   )
 );
 
-/**
- * Headlines route responds with a random headline if the user is logged in
- */
-app
-  .route("/headlines")
-  .post(async (req, res) => {
-    const userLoggedIn = req.isAuthenticated();
-    let userDocument = {};
-    let userFeedback = {};
-
-    if (userLoggedIn) {
-      /**
-       * Get the user document for use later to test if new random headlines have been seen
-       * already by the user.
-       */
-      userDocument = await User.findOne({ _id: req.user.id });
-      /**
-       * Check to see if there has been user feedback about headlines from the FE.
-       */
-      if (req.body.user) {
-        userFeedback = req.body;
-        /**
-         * Update the user document with user feedback about headlines the user has seen
-         */
-        userDocument = await User.findOneAndUpdate(
-          { _id: userFeedback.user },
-          {
-            $push: {
-              headlines: {
-                headline_id: userFeedback.headline,
-                publication: userFeedback.publicationAnswer,
-                chose_correctly: userFeedback.publicationCorrect,
-              },
-            },
-          }
-        );
-        /**
-         * Update the headline document with the user's feedback.
-         * Increment if a user guessed it right or wrong.
-         *
-         * Also update the statistics document to keep track of overall stats.
-         */
-        if (userFeedback.publicationCorrect) {
-          const headlineDocument = await Headline.findOneAndUpdate(
-            { _id: userFeedback.headline },
-            {
-              $inc: {
-                times_correctly_chosen: 1,
-              },
-            }
-          );
-          if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
-            const statistics = await HeadlineStat.findOneAndUpdate(
-              { _id: process.env.STATISTICS_DOCUMENT_ID },
-              {
-                $inc: {
-                  times_seen: 1,
-                  times_pub_1_chosen_correctly: 1,
-                },
-              }
-            );
-          } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
-            const statistics = await HeadlineStat.findOneAndUpdate(
-              { _id: process.env.STATISTICS_DOCUMENT_ID },
-              {
-                $inc: {
-                  times_seen: 1,
-                  times_pub_2_chosen_correctly: 1,
-                },
-              }
-            );
-          }
-        } else if (!userFeedback.publicationCorrect) {
-          const headlineDocument = await Headline.findOneAndUpdate(
-            { _id: userFeedback.headline },
-            {
-              $inc: {
-                times_incorrectly_chosen: 1,
-              },
-            }
-          );
-
-          if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
-            const statistics = await HeadlineStat.findOneAndUpdate(
-              { _id: process.env.STATISTICS_DOCUMENT_ID },
-              {
-                $inc: {
-                  times_seen: 1,
-                  times_pub_1_chosen_incorrectly: 1,
-                },
-              }
-            );
-          } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
-            const statistics = await HeadlineStat.findOneAndUpdate(
-              { _id: process.env.STATISTICS_DOCUMENT_ID },
-              {
-                $inc: {
-                  times_seen: 1,
-                  times_pub_2_chosen_incorrectly: 1,
-                },
-              }
-            );
-          }
-        }
-      }
-      try {
-        /**
-         * Get random headline
-         */
-        const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
-        /**
-         * Filter to find if all info needed is in the document
-         */
-        if (
-          randomHeadline[0].photo_source_url === null ||
-          randomHeadline[0].headline === null ||
-          randomHeadline[0].headline.slice(0, 1) === "<" ||
-          randomHeadline[0].photo_source_url.slice(0, 1) === "a"
-        ) {
-          /**
-           * Delete headline if it is missing info
-           */
-          Headline.findByIdAndRemove({
-            _id: randomHeadline[0]._id,
-          }).exec();
-
-          logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
-          /**
-           * If headline was deleted, get a new random headline
-           */
-          res.json({ isAuthenticated: userLoggedIn, getNewHeadline: "true" });
-        } else {
-          /**
-           * Send random headline if all info is in it and the user has never seen it.
-           * Get a new headline if the user has seen it.
-           */
-          const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === userFeedback.headline);
-
-          if (headlineSeen === undefined) {
-            res.json({ headline: randomHeadline[0], isAuthenticated: userLoggedIn, user: req.user });
-          } else {
-            console.log("Headline seen. Fetching new random headline.");
-            res.json({ isAuthenticated: userLoggedIn, getNewHeadline: "true" });
-          }
-        }
-      } catch (err) {
-        console.log(err);
-        logger.error(err);
-      }
-    } else {
-      /**
-       * If user is not logged in, do not send headline.
-       * Tell FE that user is not logged in.
-       */
-      res.json({ isAuthenticated: userLoggedIn });
-    }
-  })
-  .get((req, res) => {
-    /**
-     * GET requests forbidden
-     */
-    res.send("<h1>Access forbidden</h1>");
-  });
-
-//Check for existing email, then make new user with encrypted password
-app.route("/register").post(function (req, res) {
-  let checkEmail = null;
-  User.findOne({ email: req.body.email })
-    .then((doc) => {
-      checkEmail = doc;
-    })
-    .then(() => {
-      if (checkEmail != null) {
-        res.json({ available: "False" });
-      } else {
-        const user = new User({
-          name: req.body.name,
-          email: req.body.email.toLowerCase(),
-          password: req.body.password,
-        });
-
-        user.save().then(() => {
-          logger.info("User saved.");
-          res.json({ available: "True" });
-        });
-      }
-    });
-});
-
 app.get("/", (req, res) => {
   return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
 });
 
-app.get("/dashboard", (req, res) => {
-  return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
-});
-
-app.get("/game", (req, res) => {
-  return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
-});
-
-app.get("/settings", (req, res) => {
-  return res.json({ isAuthenticated: req.isAuthenticated(), user: req.user });
-});
-
-app.post("/login", passport.authenticate("local", { session: true }), function (req, res, next) {
-  if (req.isAuthenticated()) {
-    return res.json({
-      isSignedIn: "True",
-      success: true,
-      message: "Successful Login",
-      user: req.user.name,
-    });
-  }
-});
-
-//Use passport logout function
-app.get("/logout", function (req, res, next) {
-  req.logout(function (err) {
-    if (err) {
-      return next(err);
-    } else {
-      res.json({ loggedOut: "True" });
-    }
-  });
-});
-
-//Check for new headlines every hour and store new ones in db
+/**
+ * Check for new headlines at interval and store new ones in db
+ **/
 setInterval(() => {
   getArticleOne();
   getArticleTwo();
