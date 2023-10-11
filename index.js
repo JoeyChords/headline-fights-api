@@ -23,6 +23,8 @@ const register = require("./routes/register");
 const settings = require("./routes/settings");
 const dashboard = require("./routes/dashboard");
 const game = require("./routes/game");
+const updateStatistics = require("./routes/updateStatistics");
+
 require("dotenv").config();
 
 const inProd = process.env.NODE_ENV === "production";
@@ -76,6 +78,7 @@ app.use("/login", login);
 app.use("/logout", logout);
 app.use("/register", register);
 app.use("/settings", settings);
+app.use("/updateStatistics", updateStatistics);
 
 let port = process.env.PORT;
 if (port == null || port == "") {

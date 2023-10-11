@@ -25,99 +25,10 @@ router.post("/", async (req, res) => {
      * seen, there is no body, and we don't want to update any user.
      */
     userDocument = await User.findOne({ _id: req.user.id });
-    statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
     /**
      * Check to see if there has been user feedback about headlines from the FE.
      */
-    if (req.body.user) {
-      userFeedback = req.body;
 
-      /**
-       * Update the user document with user feedback about headlines the user has seen
-       */
-      userDocument = await User.findOneAndUpdate(
-        { _id: userFeedback.user },
-        {
-          $push: {
-            headlines: {
-              headline_id: userFeedback.headline,
-              publication: userFeedback.publicationAnswer,
-              chose_correctly: userFeedback.publicationCorrect,
-            },
-          },
-        }
-      );
-      userDocument = await User.findOne({ _id: req.user.id });
-
-      /**
-       * Update the headline document with the user's feedback.
-       * Increment if a user guessed it right or wrong.
-       *
-       * Also update the statistics document to keep track of overall stats.
-       */
-      if (userFeedback.publicationCorrect) {
-        const headlineDocument = await Headline.findOneAndUpdate(
-          { _id: userFeedback.headline },
-          {
-            $inc: {
-              times_correctly_chosen: 1,
-            },
-          }
-        );
-        if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
-          statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_1_chosen_correctly: 1,
-              },
-            }
-          );
-        } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
-          const statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_2_chosen_correctly: 1,
-              },
-            }
-          );
-        }
-      } else if (!userFeedback.publicationCorrect) {
-        const headlineDocument = await Headline.findOneAndUpdate(
-          { _id: userFeedback.headline },
-          {
-            $inc: {
-              times_incorrectly_chosen: 1,
-            },
-          }
-        );
-
-        if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
-          const statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_1_chosen_incorrectly: 1,
-              },
-            }
-          );
-        } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
-          const statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_2_chosen_incorrectly: 1,
-              },
-            }
-          );
-        }
-      }
-    }
     try {
       /**
        * Get random headline
@@ -152,14 +63,10 @@ router.post("/", async (req, res) => {
         const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === userFeedback.headline);
 
         if (headlineSeen === undefined) {
-          const userHeadlines = userDocument.headlines;
-          const accuracyData = calculateAccuracyData(userHeadlines, statistics);
-
           res.json({
             headline: randomHeadline[0],
             isAuthenticated: userLoggedIn,
             user: req.user,
-            publicationStats: accuracyData,
           });
         } else {
           console.log("Headline seen. Fetching new random headline.");
