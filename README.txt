@@ -51,6 +51,11 @@ db.headlines.updateMany({times_incorrectly_chosen: {$gt:0}}, {$set:{times_incorr
 
 db.headlines.updateMany({times_correctly_chosen: {$gt:0}}, {$set:{times_correctly_chosen: 0}})
 
-db.headlines.find({times_incorrectly_chosen: {$ne:0}})
+db.headlinestats.find({_id: ObjectId("651d2f756b8661038b7063b6")})
 
 db.headlinestats.updateOne({_id: ObjectId("651d2f756b8661038b7063b6")},{ $set:{ times_seen: 0, times_pub_1_chosen_correctly: 0, times_pub_1_chosen_incorrectly: 0, times_pub_2_chosen_correctly: 0, times_pub_2_chosen_incorrectly: 0 }})
+
+
+db.headlines.aggregate([{$group:{"_id":"$headline","headline":{$first:"$headline"},"count":{$sum:1}}}, {$match:{"count":{$gt:1}}},{$project:{"name":1,"_id":0}}, {$group:{"_id":null,"duplicateNames":{$push:"$headline"}}},{$project:{"_id":0,"duplicateNames":1}}])
+
+db.headlines.aggregate([{$group:{"_id":"$headline","headline":{$first:"$headline"},"count":{$sum:1}}}, {$match:{"count":{$gt:1}}}])

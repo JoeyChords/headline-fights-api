@@ -146,5 +146,5 @@ app.get("/", (req, res) => {
  **/
 setInterval(() => {
   getArticleOne();
-  getArticleTwo();
+  //getArticleTwo();
 }, 60000 * 60);
