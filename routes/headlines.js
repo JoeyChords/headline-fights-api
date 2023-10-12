@@ -15,8 +15,6 @@ const logger = winston.createLogger({
 router.post("/", async (req, res) => {
   const userLoggedIn = req.isAuthenticated();
   let userDocument = {};
-  let userFeedback = {};
-  let statistics = {};
 
   if (userLoggedIn) {
     /**
@@ -60,7 +58,7 @@ router.post("/", async (req, res) => {
          * Send random headline if all info is in it and the user has never seen it.
          * Get a new headline if the user has seen it.
          */
-        const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === userFeedback.headline);
+        const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === randomHeadline[0]._id.toString());
 
         if (headlineSeen === undefined) {
           res.json({
