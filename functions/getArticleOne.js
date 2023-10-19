@@ -24,14 +24,21 @@ function getArticleOne() {
     // Convert response to jquery searchable html
     //Search through website for top headlines and images
     const $ = cheerio.load(res.text);
-    if ($("div.stack_condensed h2").html() != articleOne.headline) {
-      articleOne.headline = $("div.stack_condensed h2").html();
-      articleOne.imgURL = $("div.stack_condensed img").attr("src");
-      articleOne.url = $("div.stack_condensed a").attr("href");
-      articleOne.publication = process.env.PUBLICATION_1;
-      console.log(articleOne);
-      saveHeadline(articleOne);
-    }
+    const secondDiv = $("div.layout--wide-center:nth-child(2)").html();
+    console.log(secondDiv);
+
+    articleOne.headline = $("h2.zone__title--full-width a").html();
+    articleOne.imgURL = $("div.layout--wide-center").html();
+    articleOne.url = $("div.zone__inner a").attr("href");
+    articleOne.videoURL = $("div.zone__inner video source").attr("src");
+    articleOne.publication = process.env.PUBLICATION_1;
+    // if (articleOne.headline === null) {
+    //   articleOne.headline = $("div.stack_condensed h2").html();
+    //   articleOne.imgURL = $("div.stack_condensed img").attr("src");
+    //   articleOne.url = $("div.stack_condensed a").attr("href");
+    // }
+    console.log(articleOne);
+    //saveHeadline(articleOne);
   });
 }
 

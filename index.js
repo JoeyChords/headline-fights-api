@@ -145,7 +145,9 @@ app.get("/", (req, res) => {
  * Check for new headlines at interval and store new ones in db
  **/
 
-setInterval(() => {
-  getArticleOne();
-  //getArticleTwo();
-}, 60000 * 60);
+getArticleOne();
+
+// setInterval(() => {
+//   getArticleOne();
+//   //getArticleTwo();
+// }, 60000 * 60);
