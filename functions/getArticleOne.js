@@ -29,7 +29,6 @@ function getArticleOne() {
       articleOne.imgURL = $("div.stack_condensed img").attr("src");
       articleOne.url = $("div.stack_condensed a").attr("href");
       articleOne.publication = process.env.PUBLICATION_1;
-      console.log(articleOne);
       saveHeadline(articleOne);
     }
   });
