@@ -20,8 +20,19 @@ function calculateAccuracyData(userHeadlines, statistics) {
   const crowdPub2CorrectPercent = Math.round(
     (statistics.times_pub_2_chosen_correctly / (statistics.times_pub_2_chosen_correctly + statistics.times_pub_2_chosen_incorrectly)) * 100
   );
+  const totalRatingsCount = pub1Only.length + pub2Only.length;
+  const pub1RatingsCount = pub1Only.length;
+  const pub2RatingsCount = pub2Only.length;
 
-  const accuracyData = new AccuracyData(pub1CorrectPercent, pub2CorrectPercent, crowdPub1CorrectPercent, crowdPub2CorrectPercent);
+  const accuracyData = new AccuracyData(
+    pub1CorrectPercent,
+    pub2CorrectPercent,
+    crowdPub1CorrectPercent,
+    crowdPub2CorrectPercent,
+    totalRatingsCount,
+    pub1RatingsCount,
+    pub2RatingsCount
+  );
   return accuracyData;
 }
 
