@@ -17,6 +17,7 @@ const HeadlineStat = require("./models/headlineStat");
 const saveUserFeedback = require("./functions/saveUserFeedback");
 const saltRounds = 10;
 const headlines = require("./routes/headlines");
+const home = require("./routes/home");
 const logout = require("./routes/logout");
 const login = require("./routes/login");
 const register = require("./routes/register");
@@ -71,6 +72,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use("/home", home);
 app.use("/headlines", headlines);
 app.use("/dashboard", dashboard);
 app.use("/game", game);

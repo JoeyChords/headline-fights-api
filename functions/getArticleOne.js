@@ -12,7 +12,6 @@ const logger = winston.createLogger({
 
 //Scrape publication for top article headline and photo
 function getArticleOne() {
-  console.log("Here");
   let articleOne = new Article("", "", "", "", "");
 
   superagent.get(process.env.PUBLICATION_1_URL).end((err, res) => {
