@@ -9,8 +9,6 @@ router.post("/", async (req, res) => {
 
   userCount = await User.countDocuments();
   statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
-  console.log(userCount);
-  console.log(statistics);
 
   res.json({
     isAuthenticated: userLoggedIn,

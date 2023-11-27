@@ -16,6 +16,53 @@ router.post("/", async (req, res) => {
   const userLoggedIn = req.isAuthenticated();
   let userDocument = {};
 
+  async function getUnseenRandomHeadline() {
+    /**
+     * Get random headline
+     */
+    const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
+    /**
+     * Filter to find if all info needed is in the document
+     */
+    if (
+      randomHeadline[0].photo_source_url === null ||
+      randomHeadline[0].headline === null ||
+      randomHeadline[0].headline.slice(0, 1) === "<" ||
+      randomHeadline[0].photo_source_url.slice(0, 1) === "a"
+    ) {
+      /**
+       * Delete headline if it is missing info
+       */
+      Headline.findByIdAndRemove({
+        _id: randomHeadline[0]._id,
+      }).exec();
+
+      logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
+      /**
+       * If headline was deleted, get a new random headline
+       */
+      getUnseenRandomHeadline();
+    } else {
+      /**
+       * Send random headline if all info is in it and the user has never seen it.
+       * Get a new headline if the user has seen it.
+       */
+
+      const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === randomHeadline[0]._id.toString());
+
+      if (headlineSeen === undefined) {
+        res.json({
+          headline: randomHeadline[0],
+          isAuthenticated: userLoggedIn,
+          user: req.user,
+        });
+      } else {
+        console.log("Headline seen. Fetching new random headline.");
+        getUnseenRandomHeadline();
+      }
+    }
+  }
+
   if (userLoggedIn) {
     /**
      * Get the user document for use later to test if new random headlines have been seen
@@ -28,49 +75,7 @@ router.post("/", async (req, res) => {
      */
 
     try {
-      /**
-       * Get random headline
-       */
-      const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
-      /**
-       * Filter to find if all info needed is in the document
-       */
-      if (
-        randomHeadline[0].photo_source_url === null ||
-        randomHeadline[0].headline === null ||
-        randomHeadline[0].headline.slice(0, 1) === "<" ||
-        randomHeadline[0].photo_source_url.slice(0, 1) === "a"
-      ) {
-        /**
-         * Delete headline if it is missing info
-         */
-        Headline.findByIdAndRemove({
-          _id: randomHeadline[0]._id,
-        }).exec();
-
-        logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
-        /**
-         * If headline was deleted, get a new random headline
-         */
-        res.json({ isAuthenticated: userLoggedIn, getNewHeadline: "true" });
-      } else {
-        /**
-         * Send random headline if all info is in it and the user has never seen it.
-         * Get a new headline if the user has seen it.
-         */
-        const headlineSeen = await userDocument.headlines.find(({ headline_id }) => headline_id === randomHeadline[0]._id.toString());
-
-        if (headlineSeen === undefined) {
-          res.json({
-            headline: randomHeadline[0],
-            isAuthenticated: userLoggedIn,
-            user: req.user,
-          });
-        } else {
-          console.log("Headline seen. Fetching new random headline.");
-          res.json({ isAuthenticated: userLoggedIn, getNewHeadline: "true" });
-        }
-      }
+      getUnseenRandomHeadline();
     } catch (err) {
       console.log(err);
       logger.error(err);

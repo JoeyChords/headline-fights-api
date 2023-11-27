@@ -17,10 +17,10 @@ async function saveHeadline(article) {
       });
 
       headline.save().then(() => {
-        "New headline saved: " + headline.headline;
+        "New headline saved: '" + headline.headline + ".'";
       });
     } else {
-      console.log("Headline " + article.headline + " already exists. Not saved.");
+      console.log("Headline, '" + article.headline + ",' already exists. Not saved.");
     }
   } else {
     console.log("Headline corrupt. Not saved.");
