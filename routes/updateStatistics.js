@@ -41,15 +41,16 @@ router.post("/", async (req, res) => {
 
       async function updateHeadlineDocument(publicationCorrect, biasAttribute1, biasAttribute1Answer, biasAttribute2, biasAttribute2Answer) {
         const timesCorrectOrIncorrect = publicationCorrect ? "times_correctly_chosen" : "times_incorrectly_chosen";
-        const biasAttribute1Increment = `${biasAttribute1}_${biasAttribute1Answer}`;
-        const biasAttribute2Increment = `${biasAttribute2}_${biasAttribute2Answer}`;
+        const biasAttribute1Increment = `bias_attributes.${biasAttribute1}_${biasAttribute1Answer}`;
+        const biasAttribute2Increment = `bias_attributes.${biasAttribute2}_${biasAttribute2Answer}`;
 
         const headlineDocument = await Headline.findOneAndUpdate(
           { _id: userFeedback.headline },
           {
             $inc: {
               [timesCorrectOrIncorrect]: 1,
-              bias_attributes: { [biasAttribute1Increment]: 1, [biasAttribute2Increment]: 1 },
+              [biasAttribute1Increment]: 1,
+              [biasAttribute2Increment]: 1,
             },
           }
         );
@@ -67,8 +68,8 @@ router.post("/", async (req, res) => {
         const timesPublicationCorrectOrIncorrect = publicationCorrect
           ? `times_${publication}_chosen_correctly`
           : `times_${publication}_chosen_incorrectly`;
-        const biasAttribute1Increment = `${biasAttribute1}_${biasAttribute1Answer}`;
-        const biasAttribute2Increment = `${biasAttribute2}_${biasAttribute2Answer}`;
+        const biasAttribute1Increment = `${publication}_bias_attributes.${biasAttribute1}_${biasAttribute1Answer}`;
+        const biasAttribute2Increment = `${publication}_bias_attributes.${biasAttribute2}_${biasAttribute2Answer}`;
 
         statistics = await HeadlineStat.findOneAndUpdate(
           { _id: process.env.STATISTICS_DOCUMENT_ID },
@@ -76,10 +77,8 @@ router.post("/", async (req, res) => {
             $inc: {
               times_seen: 1,
               [timesPublicationCorrectOrIncorrect]: 1,
-              [`${publication}_bias_attributes`]: {
-                [biasAttribute1Increment]: 1,
-                [biasAttribute2Increment]: 1,
-              },
+              [biasAttribute1Increment]: 1,
+              [biasAttribute2Increment]: 1,
             },
           }
         );
@@ -111,7 +110,6 @@ router.post("/", async (req, res) => {
         isAuthenticated: userLoggedIn,
         user: req.user,
         publicationStats: accuracyData,
-        biasStats: statistics.json(),
       });
     } else {
       /**
