@@ -3,7 +3,6 @@ const router = express.Router();
 const calculateAccuracyData = require("../functions/calculateAccuracyData");
 
 router.post("/", async (req, res) => {
-  console.log(req.body);
   const userLoggedIn = req.isAuthenticated();
   let userDocument = {};
   let userFeedback = {};

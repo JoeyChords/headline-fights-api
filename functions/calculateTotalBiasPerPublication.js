@@ -35,7 +35,7 @@ function calculateTotalBiasPerPublication(stats) {
 
   const falseBalance = calculateOneBiasType(attributes.false_balance_bias_true, attributes.false_balance_bias_false);
 
-  percentBiased =
+  percentBiased = Math.round(
     (sensationalism +
       undueWeight +
       speculativeContent +
@@ -51,7 +51,8 @@ function calculateTotalBiasPerPublication(stats) {
       decisionMaking +
       mainstream +
       falseBalance) /
-    15;
+      15
+  );
 
   return percentBiased;
 }
