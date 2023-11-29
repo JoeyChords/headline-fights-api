@@ -13,8 +13,10 @@ const userSchema = new mongoose.Schema(
         headline_id: String,
         publication: String,
         chose_correctly: Boolean, // did the user choose the correct origin publication of the headline?
-        democrat_republican_na: String, // the user's feeling about which political party the headline might respresent or if it isn't applicable
-        inflammatory_rating: Number, // number from 1 to 10 representing the disturbance the headline seems to want to cause
+        attribute1: String,
+        attribute1Answer: String,
+        attribute2: String,
+        attribute2Answer: String,
       },
     ],
   },
