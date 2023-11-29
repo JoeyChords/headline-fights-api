@@ -21,6 +21,10 @@ router.post("/", async (req, res) => {
               headline_id: userFeedback.headline,
               publication: userFeedback.publicationAnswer,
               chose_correctly: userFeedback.publicationCorrect,
+              attribute1: userFeedback.attribute1,
+              attribute1Answer: userFeedback.attribute1Answer,
+              attribute2: userFeedback.attribute2,
+              attribute2Answer: userFeedback.attribute2Answer,
             },
           },
         }
@@ -28,90 +32,91 @@ router.post("/", async (req, res) => {
 
       /**
        * Update the headline document with the user's feedback.
-       * Increment if a user guessed it right or wrong.
+       * Increment if a user guessed the publication right or wrong.
+       * Indicate the user's answers about bias types in the headline.
        *
-       * Also update the statistics document to keep track of overall stats.
+       * Update the statistics document to keep track of overall stats.
        */
-      if (userFeedback.publicationCorrect) {
-        const headlineDocument = await Headline.findOneAndUpdate(
-          { _id: userFeedback.headline },
-          {
-            $inc: {
-              times_correctly_chosen: 1,
-            },
-          }
-        );
-        if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
-          statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_1_chosen_correctly: 1,
-              },
-            }
-          );
-        } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
-          const statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_2_chosen_correctly: 1,
-              },
-            }
-          );
-        }
-      } else if (!userFeedback.publicationCorrect) {
-        const headlineDocument = await Headline.findOneAndUpdate(
-          { _id: userFeedback.headline },
-          {
-            $inc: {
-              times_incorrectly_chosen: 1,
-            },
-          }
-        );
 
-        if (userFeedback.publicationAnswer === process.env.PUBLICATION_1) {
-          const statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_1_chosen_incorrectly: 1,
-              },
-            }
-          );
-        } else if (userFeedback.publicationAnswer === process.env.PUBLICATION_2) {
-          const statistics = await HeadlineStat.findOneAndUpdate(
-            { _id: process.env.STATISTICS_DOCUMENT_ID },
-            {
-              $inc: {
-                times_seen: 1,
-                times_pub_2_chosen_incorrectly: 1,
-              },
-            }
-          );
-        }
+      async function updateHeadlineDocument(publicationCorrect, biasAttribute1, biasAttribute1Answer, biasAttribute2, biasAttribute2Answer) {
+        const timesCorrectOrIncorrect = publicationCorrect ? "times_correctly_chosen" : "times_incorrectly_chosen";
+        const biasAttribute1Increment = `bias_attributes.${biasAttribute1}_${biasAttribute1Answer}`;
+        const biasAttribute2Increment = `bias_attributes.${biasAttribute2}_${biasAttribute2Answer}`;
+
+        const headlineDocument = await Headline.findOneAndUpdate(
+          { _id: userFeedback.headline },
+          {
+            $inc: {
+              [timesCorrectOrIncorrect]: 1,
+              [biasAttribute1Increment]: 1,
+              [biasAttribute2Increment]: 1,
+            },
+          }
+        );
       }
+
+      async function updateHeadlineStatsDocument(
+        publicationCorrect,
+        publicationAnswer,
+        biasAttribute1,
+        biasAttribute1Answer,
+        biasAttribute2,
+        biasAttribute2Answer
+      ) {
+        const publication = publicationAnswer === process.env.PUBLICATION_1 ? "pub_1" : "pub_2";
+        const timesPublicationCorrectOrIncorrect = publicationCorrect
+          ? `times_${publication}_chosen_correctly`
+          : `times_${publication}_chosen_incorrectly`;
+        const biasAttribute1Increment = `${publication}_bias_attributes.${biasAttribute1}_${biasAttribute1Answer}`;
+        const biasAttribute2Increment = `${publication}_bias_attributes.${biasAttribute2}_${biasAttribute2Answer}`;
+
+        statistics = await HeadlineStat.findOneAndUpdate(
+          { _id: process.env.STATISTICS_DOCUMENT_ID },
+          {
+            $inc: {
+              times_seen: 1,
+              [timesPublicationCorrectOrIncorrect]: 1,
+              [biasAttribute1Increment]: 1,
+              [biasAttribute2Increment]: 1,
+            },
+          }
+        );
+      }
+
+      updateHeadlineDocument(
+        userFeedback.publicationCorrect,
+        userFeedback.attribute1,
+        userFeedback.attribute1Answer,
+        userFeedback.attribute2,
+        userFeedback.attribute2Answer
+      );
+
+      updateHeadlineStatsDocument(
+        userFeedback.publicationCorrect,
+        userFeedback.publicationAnswer,
+        userFeedback.attribute1,
+        userFeedback.attribute1Answer,
+        userFeedback.attribute2,
+        userFeedback.attribute2Answer
+      );
+
+      userDocument = await User.findOne({ _id: req.user.id });
+      statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
+      const userHeadlines = userDocument.headlines;
+      const accuracyData = calculateAccuracyData(userHeadlines, statistics);
+
+      res.json({
+        isAuthenticated: userLoggedIn,
+        user: req.user,
+        publicationStats: accuracyData,
+      });
+    } else {
+      /**
+       * If user is not logged in, do not send headline.
+       * Tell FE that user is not logged in.
+       */
+      res.json({ isAuthenticated: userLoggedIn });
     }
-
-    userDocument = await User.findOne({ _id: req.user.id });
-    statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
-    const userHeadlines = userDocument.headlines;
-    const accuracyData = calculateAccuracyData(userHeadlines, statistics);
-
-    res.json({
-      isAuthenticated: userLoggedIn,
-      user: req.user,
-      publicationStats: accuracyData,
-    });
-  } else {
-    /**
-     * If user is not logged in, do not send headline.
-     * Tell FE that user is not logged in.
-     */
-    res.json({ isAuthenticated: userLoggedIn });
   }
 });
 
