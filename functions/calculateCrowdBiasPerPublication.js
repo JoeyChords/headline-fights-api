@@ -34,43 +34,63 @@ function calculateCrowdBiasPerPublication(publication, stats) {
 
   const falseBalance = calculateOneBiasTypeCrowd(attributes.false_balance_bias_true, attributes.false_balance_bias_false);
 
-  const totalCrowdBias = Math.round(
-    (sensationalism +
-      undueWeight +
-      speculativeContent +
-      tonality +
-      concision +
-      coverage +
-      distortion +
-      partisan +
-      favorsOrAttacks +
-      content +
-      structural +
-      gatekeeping +
-      decisionMaking +
-      mainstream +
-      falseBalance) /
-      15
-  );
+  const numberOfBiasesSeen =
+    sensationalism.biasExists +
+    undueWeight.biasExists +
+    speculativeContent.biasExists +
+    tonality.biasExists +
+    concision.biasExists +
+    coverage.biasExists +
+    distortion.biasExists +
+    partisan.biasExists +
+    favorsOrAttacks.biasExists +
+    content.biasExists +
+    structural.biasExists +
+    gatekeeping.biasExists +
+    decisionMaking.biasExists +
+    mainstream.biasExists +
+    falseBalance.biasExists;
+
+  const totalCrowdBias =
+    numberOfBiasesSeen > 0
+      ? Math.round(
+          (sensationalism.percentBiased +
+            undueWeight.percentBiased +
+            speculativeContent.percentBiased +
+            tonality.percentBiased +
+            concision.percentBiased +
+            coverage.percentBiased +
+            distortion.percentBiased +
+            partisan.percentBiased +
+            favorsOrAttacks.percentBiased +
+            content.percentBiased +
+            structural.percentBiased +
+            gatekeeping.percentBiased +
+            decisionMaking.percentBiased +
+            mainstream.percentBiased +
+            falseBalance.percentBiased) /
+            numberOfBiasesSeen
+        )
+      : 0;
 
   const allCrowdBiases = new CrowdBiases(
     publication,
     totalCrowdBias,
-    sensationalism,
-    undueWeight,
-    speculativeContent,
-    tonality,
-    concision,
-    coverage,
-    distortion,
-    partisan,
-    favorsOrAttacks,
-    content,
-    structural,
-    gatekeeping,
-    decisionMaking,
-    mainstream,
-    falseBalance
+    sensationalism.percentBiased,
+    undueWeight.percentBiased,
+    speculativeContent.percentBiased,
+    tonality.percentBiased,
+    concision.percentBiased,
+    coverage.percentBiased,
+    distortion.percentBiased,
+    partisan.percentBiased,
+    favorsOrAttacks.percentBiased,
+    content.percentBiased,
+    structural.percentBiased,
+    gatekeeping.percentBiased,
+    decisionMaking.percentBiased,
+    mainstream.percentBiased,
+    falseBalance.percentBiased
   );
 
   return allCrowdBiases;

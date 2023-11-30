@@ -1,28 +1,33 @@
 function calculateOneBiasTypePersonal(publication, biasType, headlines) {
-  //   console.log(publication);
-  //   console.log(headlines);
-
+  let biasExists = 0;
   let timesBiasTypeSeen = 0;
   let timesBiasTypeTrue = 0;
 
   for (let i = 0; i < headlines.length; i++) {
     if (headlines[i].publication === publication) {
-      if (headlines[i].attribute1 === biasType) {
+      if (headlines[i].attribute1 === biasType && (headlines[i].attribute1Answer === "true" || headlines[i].attribute1Answer === "false")) {
         timesBiasTypeSeen++;
+        biasExists = 1;
         if (headlines[i].attribute1Answer === "true") {
           timesBiasTypeTrue++;
         }
-      } else if (headlines[i].attribute2 === biasType) {
+      } else if (headlines[i].attribute2 === biasType && (headlines[i].attribute1Answer === "true" || headlines[i].attribute1Answer === "false")) {
         timesBiasTypeSeen++;
+        biasExists = 1;
         if (headlines[i].attribute2Answer === "true") {
           timesBiasTypeTrue++;
         }
       }
     }
   }
-  let biasPercent = timesBiasTypeSeen > 0 ? Math.round((timesBiasTypeTrue / timesBiasTypeSeen) * 100) : 0;
+  const percentBiased = timesBiasTypeSeen > 0 ? Math.round((timesBiasTypeTrue / timesBiasTypeSeen) * 100) : 0;
 
-  return biasPercent;
+  const bias = {
+    biasExists: biasExists,
+    percentBiased: percentBiased,
+  };
+
+  return bias;
 }
 
 module.exports = calculateOneBiasTypePersonal;
