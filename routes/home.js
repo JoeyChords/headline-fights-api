@@ -10,8 +10,8 @@ router.post("/", async (req, res) => {
   userCount = await User.countDocuments();
   statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
 
-  const pub1Bias = calculateCrowdBiasPerPublication(statistics.pub_1_bias_attributes);
-  const pub2Bias = calculateCrowdBiasPerPublication(statistics.pub_2_bias_attributes);
+  const pub1Bias = calculateCrowdBiasPerPublication(process.env.PUBLICATION_1, statistics.pub_1_bias_attributes);
+  const pub2Bias = calculateCrowdBiasPerPublication(process.env.PUBLICATION_2, statistics.pub_2_bias_attributes);
 
   res.json({
     isAuthenticated: userLoggedIn,
