@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const winston = require("winston");
-const calculateAccuracyData = require("../functions/calculateAccuracyData");
+const calculateGuessAccuracy = require("../functions/calculateGuessAccuracy");
 const { combine, timestamp, json } = winston.format;
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
