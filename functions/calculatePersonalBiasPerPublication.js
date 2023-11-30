@@ -32,46 +32,64 @@ function calculateTotalBiasPerPublication(publication, headlines) {
 
   const false_balance_bias = calculateOneBiasTypePersonal(publication, "false_balance_bias", headlines);
 
-  let totalPersonalBias = Math.round(
-    (sensationalism +
-      undue_weight_bias +
-      speculative_content +
-      tonality_bias +
-      concision_bias +
-      coverage_bias +
-      distortion_bias +
-      partisan_bias +
-      favors_or_attacks +
-      content_bias +
-      structural_bias +
-      gatekeeping_bias +
-      decision_making_bias +
-      mainstream_bias +
-      false_balance_bias) /
-      15
-  );
+  const numberOfBiasesSeen =
+    sensationalism.biasExists +
+    undue_weight_bias.biasExists +
+    speculative_content.biasExists +
+    tonality_bias.biasExists +
+    concision_bias.biasExists +
+    coverage_bias.biasExists +
+    distortion_bias.biasExists +
+    partisan_bias.biasExists +
+    favors_or_attacks.biasExists +
+    content_bias.biasExists +
+    structural_bias.biasExists +
+    gatekeeping_bias.biasExists +
+    decision_making_bias.biasExists +
+    mainstream_bias.biasExists +
+    false_balance_bias.biasExists;
+
+  let totalPersonalBias =
+    numberOfBiasesSeen > 0
+      ? Math.round(
+          (sensationalism.percentBiased +
+            undue_weight_bias.percentBiased +
+            speculative_content.percentBiased +
+            tonality_bias.percentBiased +
+            concision_bias.percentBiased +
+            coverage_bias.percentBiased +
+            distortion_bias.percentBiased +
+            partisan_bias.percentBiased +
+            favors_or_attacks.percentBiased +
+            content_bias.percentBiased +
+            structural_bias.percentBiased +
+            gatekeeping_bias.percentBiased +
+            decision_making_bias.percentBiased +
+            mainstream_bias.percentBiased +
+            false_balance_bias.percentBiased) /
+            numberOfBiasesSeen
+        )
+      : 0;
 
   const allPersonalBiases = new PersonalBiases(
     publication,
     totalPersonalBias,
-    sensationalism,
-    undue_weight_bias,
-    speculative_content,
-    tonality_bias,
-    concision_bias,
-    coverage_bias,
-    distortion_bias,
-    partisan_bias,
-    favors_or_attacks,
-    content_bias,
-    structural_bias,
-    gatekeeping_bias,
-    decision_making_bias,
-    mainstream_bias,
-    false_balance_bias
+    sensationalism.percentBiased,
+    undue_weight_bias.percentBiased,
+    speculative_content.percentBiased,
+    tonality_bias.percentBiased,
+    concision_bias.percentBiased,
+    coverage_bias.percentBiased,
+    distortion_bias.percentBiased,
+    partisan_bias.percentBiased,
+    favors_or_attacks.percentBiased,
+    content_bias.percentBiased,
+    structural_bias.percentBiased,
+    gatekeeping_bias.percentBiased,
+    decision_making_bias.percentBiased,
+    mainstream_bias.percentBiased,
+    false_balance_bias.percentBiased
   );
-
-  console.log(allPersonalBiases);
 
   return allPersonalBiases;
 }
