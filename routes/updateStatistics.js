@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const calculateAccuracyData = require("../functions/calculateAccuracyData");
+const calculateGuessAccuracy = require("../functions/calculateGuessAccuracy");
 
 router.post("/", async (req, res) => {
   const userLoggedIn = req.isAuthenticated();
@@ -103,7 +103,7 @@ router.post("/", async (req, res) => {
       userDocument = await User.findOne({ _id: req.user.id });
       statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
       const userHeadlines = userDocument.headlines;
-      const accuracyData = calculateAccuracyData(userHeadlines, statistics);
+      const accuracyData = calculateGuessAccuracy(userHeadlines, statistics);
 
       res.json({
         isAuthenticated: userLoggedIn,

@@ -7,7 +7,7 @@
  */
 const AccuracyData = require("../classes/AccuracyData");
 
-function calculateAccuracyData(userHeadlines, statistics) {
+function calculateGuessAccuracy(userHeadlines, statistics) {
   const pub1Only = userHeadlines.filter((userHeadlines) => userHeadlines.publication === process.env.PUBLICATION_1);
   const pub1CorrectCount = pub1Only.reduce((counter, pub1Only) => (pub1Only.chose_correctly === true ? ++counter : counter), 0);
   const pub2Only = userHeadlines.filter((userHeadlines) => userHeadlines.publication === process.env.PUBLICATION_2);
@@ -36,4 +36,4 @@ function calculateAccuracyData(userHeadlines, statistics) {
   return accuracyData;
 }
 
-module.exports = calculateAccuracyData;
+module.exports = calculateGuessAccuracy;
