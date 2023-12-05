@@ -11,7 +11,7 @@ function calculateOneBiasTypePersonal(publication, biasType, headlines) {
         if (headlines[i].attribute1Answer === "true") {
           timesBiasTypeTrue++;
         }
-      } else if (headlines[i].attribute2 === biasType && (headlines[i].attribute1Answer === "true" || headlines[i].attribute1Answer === "false")) {
+      } else if (headlines[i].attribute2 === biasType && (headlines[i].attribute2Answer === "true" || headlines[i].attribute2Answer === "false")) {
         timesBiasTypeSeen++;
         biasExists = 1;
         if (headlines[i].attribute2Answer === "true") {
