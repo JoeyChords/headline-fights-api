@@ -7,6 +7,9 @@ const userSchema = new mongoose.Schema(
     name: String,
     email: String,
     password: String,
+    verification_code: Number,
+    email_verified: Boolean,
+    verification_code_datetime: Date,
     headlines: [
       // the headlines the user has seen and rated
       {
