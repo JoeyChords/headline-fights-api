@@ -3,6 +3,7 @@ const router = express.Router();
 const calculateGuessAccuracy = require("../functions/calculateGuessAccuracy");
 const calculateCrowdBiasPerPublication = require("../functions/calculateCrowdBiasPerPublication");
 const calculatePersonalBiasPerPublication = require("../functions/calculatePersonalBiasPerPublication");
+const sendVerificationEmail = require("../functions/sendVerificationEmail");
 
 router.post("/", async (req, res) => {
   const userLoggedIn = req.isAuthenticated();
@@ -19,9 +20,19 @@ router.post("/", async (req, res) => {
     const pub1PersonalBias = calculatePersonalBiasPerPublication(process.env.PUBLICATION_1, userHeadlines);
     const pub2PersonalBias = calculatePersonalBiasPerPublication(process.env.PUBLICATION_2, userHeadlines);
 
+    if (!userDocument.email_verified) {
+      const verificationCode = Math.floor(Math.random() * 1000000);
+      sendVerificationEmail(userDocument.name, userDocument.email, verificationCode);
+      const verifyEmail = await User.findOneAndUpdate(
+        { email: userDocument.email },
+        { verification_code: verificationCode, verification_code_datetime: new Date() }
+      );
+    }
+
     res.json({
       isAuthenticated: userLoggedIn,
       user: req.user,
+      email_verified: userDocument.email_verified,
       publicationStats: accuracyData,
       pub_1_crowd_total_bias: pub1CrowdBias.total_bias,
       pub_2_crowd_total_bias: pub2CrowdBias.total_bias,
