@@ -5,12 +5,11 @@ const sendVerificationEmail = require("../functions/sendVerificationEmail");
 
 router.post("/", passport.authenticate("local", { session: true }), async function (req, res, next) {
   if (req.isAuthenticated()) {
-    const userDocument = await User.findOne({ email: req.body.email });
-    if (!userDocument.email_verified) {
+    if (!req.user.email_verified) {
       const verificationCode = Math.floor(Math.random() * 1000000);
-      sendVerificationEmail(req.body.name, req.body.email, verificationCode);
+      sendVerificationEmail(req.user.name, req.user.email, verificationCode);
       const verifyEmail = await User.findOneAndUpdate(
-        { email: req.body.email },
+        { email: req.user.email },
         { verification_code: verificationCode, verification_code_datetime: new Date() }
       );
     }
