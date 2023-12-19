@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema(
     name: String,
     email: String,
     password: String,
+    password_reset_token: String,
+    password_reset_datetime: Date,
     verification_code: Number,
     email_verified: Boolean,
     verification_code_datetime: Date,
