@@ -12,7 +12,7 @@ let transporter = nodemailer.createTransport({
 
 async function sendPasswordResetEmail(name, email, token) {
   let emailResponse = await transporter.sendMail({
-    from: process.env.SENDER_EMAIL,
+    from: process.env.SENDER_EMAIL_2,
     to: email,
     subject: "Reset Your Password",
     html:
