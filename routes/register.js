@@ -26,6 +26,7 @@ router.post("/", function (req, res) {
         } else {
           const verificationCode = Math.floor(Math.random() * 1000000);
 
+          //Encryption happens in models/user.js
           const user = new User({
             name: req.body.name,
             email: normalizeEmail(req.body.email),
