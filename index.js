@@ -159,4 +159,4 @@ setInterval(() => {
 
 setInterval(() => {
   getArticleTwo();
-}, 60000 * 120);
+}, 60000 * 180);
