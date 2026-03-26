@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Match the headline to the publication.",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.18.0 <21.0.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
