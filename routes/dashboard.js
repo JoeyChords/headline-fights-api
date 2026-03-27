@@ -14,6 +14,7 @@ router.post("/", async (req, res) => {
   let statistics = {};
 
   if (userLoggedIn) {
+    try {
     userDocument = await User.findOne({ _id: req.user.id });
     statistics = await HeadlineStat.findOne({ _id: process.env.STATISTICS_DOCUMENT_ID });
     const userHeadlines = userDocument.headlines;
@@ -44,6 +45,9 @@ router.post("/", async (req, res) => {
       pub_1_crowd_bias: pub1CrowdBias,
       pub_2_crowd_bias: pub2CrowdBias,
     });
+    } catch (err) {
+      res.status(500).json({ error: "Server error." });
+    }
   } else {
     /**
      * If user is not logged in, do not send user stats.

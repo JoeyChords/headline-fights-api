@@ -86,7 +86,7 @@ router.post("/", async (req, res) => {
         );
       }
 
-      updateHeadlineDocument(
+      await updateHeadlineDocument(
         userFeedback.publicationCorrect,
         userFeedback.attribute1,
         userFeedback.attribute1Answer,
@@ -94,7 +94,7 @@ router.post("/", async (req, res) => {
         userFeedback.attribute2Answer
       );
 
-      updateHeadlineStatsDocument(
+      await updateHeadlineStatsDocument(
         userFeedback.publicationCorrect,
         userFeedback.publicationAnswer,
         userFeedback.attribute1,

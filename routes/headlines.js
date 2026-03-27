@@ -23,6 +23,9 @@ router.post("/", async (req, res) => {
      * Get random headline
      */
     const randomHeadline = await Headline.aggregate([{ $sample: { size: 1 } }]);
+    if (!randomHeadline.length) {
+      return res.json({ isAuthenticated: true, headline: null });
+    }
     /**
      * Filter to find if all info needed is in the document
      */
@@ -35,9 +38,7 @@ router.post("/", async (req, res) => {
       /**
        * Delete headline if it is missing info
        */
-      Headline.findByIdAndRemove({
-        _id: randomHeadline[0]._id,
-      }).exec();
+      Headline.findByIdAndDelete(randomHeadline[0]._id).exec();
 
       logger.info("Corrupt headline deleted: " + randomHeadline[0].headline + " id: " + randomHeadline[0]._id);
       /**

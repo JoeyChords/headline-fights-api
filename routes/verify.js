@@ -9,6 +9,9 @@ const User = require("../models/user");
 
 router.post("/", async function (req, res, next) {
   const userDocument = await User.findOne({ email: req.body.email });
+  if (!userDocument) {
+    return res.json({ submitted_in_time: false });
+  }
   const minutesElapsed = (new Date() - new Date(userDocument.verification_code_datetime)) / 60000;
 
   if (minutesElapsed < 15) {

@@ -4,6 +4,7 @@ const crypto = require("node:crypto");
 const winston = require("winston");
 const User = require("../models/user");
 const isEmail = require("validator/lib/isEmail");
+const isStrongPassword = require("validator/lib/isStrongPassword");
 const normalizeEmail = require("validator/lib/normalizeEmail");
 const sendVerificationEmail = require("../functions/sendVerificationEmail");
 
@@ -17,7 +18,7 @@ const logger = winston.createLogger({
 //Check for existing email, then make new user with encrypted password
 router.post("/", function (req, res) {
   let checkEmail = null;
-  if (isEmail(req.body.email)) {
+  if (isEmail(req.body.email) && isStrongPassword(req.body.password)) {
     User.findOne({ email: normalizeEmail(req.body.email) })
       .then((doc) => {
         checkEmail = doc;
@@ -51,8 +52,10 @@ router.post("/", function (req, res) {
         logger.error(err);
         res.status(500).json({ error: "Server error." });
       });
-  } else {
+  } else if (!isEmail(req.body.email)) {
     res.json({ available: "False", validEmail: "False" });
+  } else {
+    res.status(400).json({ available: "False", validEmail: "True", weakPassword: "True" });
   }
 });
 

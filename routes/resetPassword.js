@@ -13,13 +13,11 @@ router.post("/", async function (req, res, next) {
       userDocument.password_reset_token &&
       req.body.token === userDocument.password_reset_token;
     if (minutesElapsed < 15 && tokenValid) {
-      bcrypt.hash(req.body.password, saltRounds, async function (err, hash) {
-        await User.findOneAndUpdate(
-          { email: userDocument.email },
-          { password: hash, password_reset_token: null }
-        );
-      });
-
+      const hash = await bcrypt.hash(req.body.password, saltRounds);
+      await User.findOneAndUpdate(
+        { email: userDocument.email },
+        { password: hash, password_reset_token: null }
+      );
       return res.json({
         submitted_in_time: true,
         user_exists: true,
