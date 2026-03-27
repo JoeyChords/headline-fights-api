@@ -1,13 +1,17 @@
 const express = require("express");
 const router = express.Router();
 
-router.get("/", function (req, res, next) {
+router.post("/", function (req, res, next) {
   req.logout(function (err) {
     if (err) {
       return next(err);
-    } else {
-      res.json({ loggedOut: "True" });
     }
+    req.session.destroy(function (sessionErr) {
+      if (sessionErr) {
+        return next(sessionErr);
+      }
+      res.json({ loggedOut: "True" });
+    });
   });
 });
 
