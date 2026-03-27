@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.1.2] - 2026-03-27
+
+### Security
+
+- Fixed bcrypt fire-and-forget anti-pattern in [routes/resetPassword.js](./routes/resetPassword.js) — `bcrypt.hash` is now awaited so the password update cannot complete before the hash is ready.
+- Fixed fire-and-forget async calls in [routes/updateStatistics.js](./routes/updateStatistics.js) — `updateHeadlineDocument` and `updateHeadlineStatsDocument` are now awaited so errors are catchable.
+- Added null guard in [routes/verify.js](./routes/verify.js) — if no user document is found for the submitted email the route returns `submitted_in_time: false` instead of crashing on property access.
+- Added server-side password strength validation in [routes/register.js](./routes/register.js) using `isStrongPassword` — weak passwords are rejected with a 400 response before any database work occurs.
+- Added try/catch error handling to [routes/home.js](./routes/home.js) and [routes/dashboard.js](./routes/dashboard.js) — unhandled DB errors now return 500 instead of crashing the process.
+- Fixed accidental global variable `userCount` in [routes/home.js](./routes/home.js) — declared with `const`.
+- Added empty-array guard in [routes/headlines.js](./routes/headlines.js) — returns `{ headline: null }` instead of crashing when the headline collection is empty.
+- Replaced deprecated `findByIdAndRemove` with `findByIdAndDelete` in [routes/headlines.js](./routes/headlines.js).
+
 ## [1.1.1] - 2026-03-27
 
 ### Security
