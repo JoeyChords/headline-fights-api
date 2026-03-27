@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("node:crypto");
 const winston = require("winston");
+const User = require("../models/user");
 const isEmail = require("validator/lib/isEmail");
 const normalizeEmail = require("validator/lib/normalizeEmail");
 const sendVerificationEmail = require("../functions/sendVerificationEmail");
@@ -24,7 +26,7 @@ router.post("/", function (req, res) {
         if (checkEmail != null) {
           res.json({ available: "False", validEmail: "NA" });
         } else {
-          const verificationCode = Math.floor(Math.random() * 1000000);
+          const verificationCode = crypto.randomInt(0, 1000000);
 
           //Encryption happens in models/user.js
           const user = new User({
@@ -40,8 +42,14 @@ router.post("/", function (req, res) {
             sendVerificationEmail(req.body.name, req.body.email, verificationCode);
             logger.info("User saved.");
             res.json({ available: "True", validEmail: "True" });
+          }).catch((err) => {
+            logger.error(err);
+            res.status(500).json({ error: "Failed to create account." });
           });
         }
+      }).catch((err) => {
+        logger.error(err);
+        res.status(500).json({ error: "Server error." });
       });
   } else {
     res.json({ available: "False", validEmail: "False" });

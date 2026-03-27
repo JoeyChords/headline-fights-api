@@ -1,6 +1,7 @@
 const express = require("express");
 const crypto = require("node:crypto");
 const router = express.Router();
+const User = require("../models/user");
 const sendPasswordResetEmail = require("../functions/sendPasswordResetEmail");
 
 router.post("/", async function (req, res, next) {

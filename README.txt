@@ -115,6 +115,9 @@ Environment Notes
 - CORS uses `ORIGIN`
 - Session cookies use `DOMAIN`
 - Sessions are stored in Mongo using `DATABASE_CONNECTION_STRING`
+- `SESSION_SECRET` must be a cryptographically random string. Generate one with:
+
+  `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 Email Notes
 -----------

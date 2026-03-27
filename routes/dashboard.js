@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("node:crypto");
+const User = require("../models/user");
+const HeadlineStat = require("../models/headlineStat");
 const calculateGuessAccuracy = require("../functions/calculateGuessAccuracy");
 const calculateCrowdBiasPerPublication = require("../functions/calculateCrowdBiasPerPublication");
 const calculatePersonalBiasPerPublication = require("../functions/calculatePersonalBiasPerPublication");
@@ -21,7 +24,7 @@ router.post("/", async (req, res) => {
     const pub2PersonalBias = calculatePersonalBiasPerPublication(process.env.PUBLICATION_2, userHeadlines);
 
     if (!userDocument.email_verified) {
-      const verificationCode = Math.floor(Math.random() * 1000000);
+      const verificationCode = crypto.randomInt(0, 1000000);
       sendVerificationEmail(userDocument.name, userDocument.email, verificationCode);
       const verifyEmail = await User.findOneAndUpdate(
         { email: userDocument.email },

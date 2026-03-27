@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const User = require("../models/user");
+const Headline = require("../models/headline");
+const HeadlineStat = require("../models/headlineStat");
 const calculateGuessAccuracy = require("../functions/calculateGuessAccuracy");
 
 router.post("/", async (req, res) => {
@@ -14,7 +17,7 @@ router.post("/", async (req, res) => {
        * Update the user document with user feedback about headlines the user has seen
        */
       userDocument = await User.findOneAndUpdate(
-        { _id: userFeedback.user },
+        { _id: req.user.id },
         {
           $push: {
             headlines: {

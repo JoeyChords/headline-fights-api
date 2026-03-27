@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const winston = require("winston");
+const User = require("../models/user");
+const Headline = require("../models/headline");
 const calculateGuessAccuracy = require("../functions/calculateGuessAccuracy");
 const { combine, timestamp, json } = winston.format;
 const logger = winston.createLogger({
