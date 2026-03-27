@@ -1,4 +1,6 @@
 const bcrypt = require("bcrypt");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const MongoStore = require("connect-mongo").default;
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -36,6 +38,7 @@ if (inProd) {
   app.set("trust proxy", 1);
 }
 
+app.use(helmet());
 app.use(cookieParser());
 app.use(express.static("public"));
 
@@ -77,6 +80,28 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many attempts, please try again later." },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many accounts created from this IP, please try again later." },
+});
+
+app.use("/login", authLimiter);
+app.use("/forgotPassword", authLimiter);
+app.use("/resetPassword", authLimiter);
+app.use("/verify", authLimiter);
+app.use("/register", registerLimiter);
 
 app.use("/home", home);
 app.use("/headlines", headlines);

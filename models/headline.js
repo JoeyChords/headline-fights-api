@@ -66,6 +66,6 @@ const headlineSchema = new mongoose.Schema(
   }
 );
 
-Headline = mongoose.model("Headline", headlineSchema);
+const Headline = mongoose.model("Headline", headlineSchema);
 
 module.exports = Headline;

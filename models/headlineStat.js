@@ -111,6 +111,6 @@ const headlineStatSchema = new mongoose.Schema(
   }
 );
 
-HeadlineStat = mongoose.model("HeadlineStat", headlineStatSchema);
+const HeadlineStat = mongoose.model("HeadlineStat", headlineStatSchema);
 
 module.exports = HeadlineStat;

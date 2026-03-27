@@ -5,6 +5,7 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("passport");
+const User = require("../models/user");
 
 router.post("/", async function (req, res, next) {
   const userDocument = await User.findOne({ email: req.body.email });

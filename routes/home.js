@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const User = require("../models/user");
+const HeadlineStat = require("../models/headlineStat");
 const calculateCrowdBiasPerPublication = require("../functions/calculateCrowdBiasPerPublication");
 
 router.post("/", async (req, res) => {
