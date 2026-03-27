@@ -32,6 +32,10 @@ require("dotenv").config();
 
 const inProd = process.env.NODE_ENV === "production";
 
+if (inProd) {
+  app.set("trust proxy", 1);
+}
+
 app.use(cookieParser());
 app.use(express.static("public"));
 
@@ -47,7 +51,7 @@ app.use(
     exposedHeaders: ["Set-Cookie", "Authorization"],
     credentials: true,
     maxAge: 600,
-  })
+  }),
 );
 
 //Set Express sessions and session cookies
@@ -62,13 +66,13 @@ app.use(
     }),
     cookie: {
       httpOnly: true,
-      sameSite: `${inProd ? "lax" : "lax"}`,
-      secure: `${inProd ? "true" : "auto"}`,
+      sameSite: "lax",
+      secure: inProd,
       maxAge: 1000 * 60 * 60 * 24 * 14,
       domain: process.env.DOMAIN,
       path: "/",
     },
-  })
+  }),
 );
 
 app.use(passport.initialize());
@@ -137,8 +141,8 @@ passport.use(
         console.log(error);
         return done(error, false);
       }
-    }
-  )
+    },
+  ),
 );
 
 app.get("/", (req, res) => {
