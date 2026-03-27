@@ -66,6 +66,10 @@ router.post("/", async (req, res) => {
     }
   }
 
+  if (userLoggedIn && !req.user.email_verified) {
+    return res.status(403).json({ isAuthenticated: true, email_verified: false });
+  }
+
   if (userLoggedIn) {
     /**
      * Get the user document for use later to test if new random headlines have been seen

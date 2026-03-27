@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.1.3] - 2026-03-27
+
+### Security
+
+- Fixed unverified accounts being able to access gameplay — [routes/headlines.js](./routes/headlines.js) and [routes/updateStatistics.js](./routes/updateStatistics.js) now return 403 if the session user's `email_verified` flag is false.
+- Added server-side allowlist validation in [routes/updateStatistics.js](./routes/updateStatistics.js) for all dynamic `$inc` field paths — `attribute1`, `attribute2` must be one of the 15 known bias attributes; `attribute1Answer`, `attribute2Answer` must be `true`, `false`, or `neither`; `publicationAnswer` must match a known publication; `headline` must be a valid 24-character hex ObjectId. Inputs outside the allowlist are rejected with 400.
+- Changed the `updateStatistics` write gate from `req.body.user` (client-controlled) to `req.body.headline` (the meaningful field).
+- Added `isStrongPassword` enforcement to [routes/resetPassword.js](./routes/resetPassword.js) — the reset flow no longer accepts weak passwords.
+- Fixed email enumeration in [routes/forgotPassword.js](./routes/forgotPassword.js) — the endpoint now always returns `email_sent: true` regardless of whether the email address is registered.
+- Changed [routes/logout.js](./routes/logout.js) from GET to POST to prevent CSRF-triggered logouts via top-level cross-site navigation.
+- Added `req.session.destroy()` after `req.logout()` in [routes/logout.js](./routes/logout.js) to ensure the session is fully invalidated on logout.
+
 ## [1.1.2] - 2026-03-27
 
 ### Security

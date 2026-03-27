@@ -5,13 +5,37 @@ const Headline = require("../models/headline");
 const HeadlineStat = require("../models/headlineStat");
 const calculateGuessAccuracy = require("../functions/calculateGuessAccuracy");
 
+const VALID_ATTRIBUTES = new Set([
+  "sensationalism", "undue_weight_bias", "speculative_content", "tonality_bias",
+  "concision_bias", "coverage_bias", "distortion_bias", "partisan_bias",
+  "favors_or_attacks", "content_bias", "structural_bias", "gatekeeping_bias",
+  "decision_making_bias", "mainstream_bias", "false_balance_bias",
+]);
+const VALID_ANSWERS = new Set(["true", "false", "neither"]);
+
 router.post("/", async (req, res) => {
   const userLoggedIn = req.isAuthenticated();
   let userDocument = {};
   let userFeedback = {};
   let statistics = {};
   if (userLoggedIn) {
-    if (req.body.user) {
+    if (!req.user.email_verified) {
+      return res.status(403).json({ isAuthenticated: true, email_verified: false });
+    }
+    if (req.body.headline) {
+      const { headline, publicationCorrect, publicationAnswer, attribute1, attribute1Answer, attribute2, attribute2Answer } = req.body;
+      const validPublications = new Set([process.env.PUBLICATION_1, process.env.PUBLICATION_2]);
+      if (
+        typeof headline !== "string" || !/^[0-9a-f]{24}$/i.test(headline) ||
+        typeof publicationCorrect !== "boolean" ||
+        !validPublications.has(publicationAnswer) ||
+        !VALID_ATTRIBUTES.has(attribute1) ||
+        !VALID_ATTRIBUTES.has(attribute2) ||
+        !VALID_ANSWERS.has(attribute1Answer) ||
+        !VALID_ANSWERS.has(attribute2Answer)
+      ) {
+        return res.status(400).json({ error: "Invalid input." });
+      }
       userFeedback = req.body;
       /**
        * Update the user document with user feedback about headlines the user has seen
