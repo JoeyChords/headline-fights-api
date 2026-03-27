@@ -1,17 +1,9 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 require("dotenv").config();
 
-let transporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
-  port: 587,
-  auth: {
-    user: "apikey",
-    pass: process.env.SENDGRID_API_KEY,
-  },
-});
-
 async function sendPasswordResetEmail(name, email, token) {
-  let emailResponse = await transporter.sendMail({
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const { data, error } = await resend.emails.send({
     from: process.env.SENDER_EMAIL_2,
     to: email,
     subject: "Reset Your Password",
@@ -26,7 +18,11 @@ async function sendPasswordResetEmail(name, email, token) {
       "</strong><p>Don't share this link or forward this email to anyone else. If you didn't make this request, you can ignore this email.</p>",
   });
 
-  return emailResponse;
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 module.exports = sendPasswordResetEmail;

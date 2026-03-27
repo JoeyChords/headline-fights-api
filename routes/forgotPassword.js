@@ -1,10 +1,10 @@
 const express = require("express");
+const crypto = require("node:crypto");
 const router = express.Router();
 const sendPasswordResetEmail = require("../functions/sendPasswordResetEmail");
-const { v4: uuidv4 } = require("uuid");
 
 router.post("/", async function (req, res, next) {
-  const token = uuidv4();
+  const token = crypto.randomUUID();
   const userDocument = await User.findOne({ email: req.body.email });
   if (userDocument) {
     const updateUser = await User.findOneAndUpdate(

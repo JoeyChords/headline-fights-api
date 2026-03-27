@@ -1,6 +1,5 @@
 const bcrypt = require("bcrypt");
-const bodyParser = require("body-parser");
-const MongoStore = require("connect-mongo");
+const MongoStore = require("connect-mongo").default;
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const express = require("express");
@@ -36,8 +35,8 @@ const inProd = process.env.NODE_ENV === "production";
 app.use(cookieParser());
 app.use(express.static("public"));
 
-// parse application/json
-app.use(bodyParser.json());
+// Parse application/json with Express' built-in middleware.
+app.use(express.json());
 
 //Enable cross origin resource sharing for server API to client host
 app.use(
@@ -95,10 +94,7 @@ if (port == null || port == "") {
 }
 app.listen(port);
 
-mongoose.connect(process.env.DATABASE_CONNECTION_STRING, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(process.env.DATABASE_CONNECTION_STRING);
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));

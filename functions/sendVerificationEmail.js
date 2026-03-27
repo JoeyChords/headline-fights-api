@@ -1,17 +1,9 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 require("dotenv").config();
 
-let transporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
-  port: 587,
-  auth: {
-    user: "apikey",
-    pass: process.env.SENDGRID_API_KEY,
-  },
-});
-
 async function sendVerificationEmail(name, email, code) {
-  let emailResponse = await transporter.sendMail({
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const { data, error } = await resend.emails.send({
     from: process.env.SENDER_EMAIL,
     to: email,
     subject: code + " is your secure verification code",
@@ -23,7 +15,11 @@ async function sendVerificationEmail(name, email, code) {
       "</strong><p>Don't share this code or forward this email to anyone else. If you didn't make this request, you can ignore this email.</p>",
   });
 
-  return emailResponse;
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 module.exports = sendVerificationEmail;

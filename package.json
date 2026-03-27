@@ -1,34 +1,34 @@
 {
   "name": "headline-fights",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Match the headline to the publication.",
   "main": "index.js",
   "engines": {
-    "node": ">=20.18.0 <21.0.0"
+    "node": ">=24.14.0 <25.0.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "test": "echo \"No API tests are configured\""
   },
   "author": "Joseph Baumgartel",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "body-parser": "^1.20.2",
-    "cheerio": "^1.0.0-rc.12",
-    "connect-mongo": "^5.0.0",
+    "bcrypt": "^6.0.0",
+    "cheerio": "^1.2.0",
+    "connect-mongo": "^6.0.0",
     "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
     "express-session": "^1.17.3",
-    "mongoose": "^7.4.3",
-    "nodemailer": "^6.9.7",
+    "mongoose": "^9.3.3",
     "nodemon": "^3.0.2",
-    "passport": "^0.6.0",
+    "passport": "^0.7.0",
     "passport-local": "^1.0.0",
-    "superagent": "^8.1.2",
-    "uuid": "^9.0.1",
+    "resend": "^6.2.0",
+    "superagent": "^10.3.0",
     "validator": "^13.11.0",
-    "winston": "^3.10.0"
+    "winston": "^3.19.0"
   }
 }
