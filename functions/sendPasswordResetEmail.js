@@ -1,5 +1,4 @@
 const { Resend } = require("resend");
-require("dotenv").config();
 
 async function sendPasswordResetEmail(name, email, token) {
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -11,7 +10,7 @@ async function sendPasswordResetEmail(name, email, token) {
       "<p>Hi " +
       name +
       ",</p><p>Your secure password reset link for Headline Fights expires in 15 minutes.</p><strong>" +
-      "https://www.headlinefights.com/resetPassword?email=" +
+      (process.env.ORIGIN ?? "https://www.headlinefights.com") + "/resetPassword?email=" +
       email +
       "&token=" +
       token +

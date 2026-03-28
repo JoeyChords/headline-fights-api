@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.0] - 2026-03-27
+
+### Fixed
+
+- Fixed `passport.serializeUser` in [index.js](./index.js) — `email_verified` was not included in the serialized session object, causing `req.user.email_verified` to always be `undefined` in route handlers. This made [routes/headlines.js](./routes/headlines.js) return 403 for all authenticated users regardless of verification status.
+- Fixed password reset email link in [functions/sendPasswordResetEmail.js](./functions/sendPasswordResetEmail.js) — URL was hardcoded to the production domain; now uses `process.env.ORIGIN` so reset links work correctly in local and staging environments.
+- Removed redundant `dotenv.config()` calls from [functions/sendPasswordResetEmail.js](./functions/sendPasswordResetEmail.js) and [functions/sendVerificationEmail.js](./functions/sendVerificationEmail.js) — env is already loaded by `index.js` at startup.
+
 ## [1.1.3] - 2026-03-27
 
 ### Security
