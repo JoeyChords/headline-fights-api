@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.1] - 2026-03-27
+
+### Fixed
+
+- Fixed [routes/verify.js](./routes/verify.js) — session set manually after email verification was missing `email_verified: true`, causing the game page to immediately redirect newly verified users to `/login`.
+- Fixed [routes/register.js](./routes/register.js) — `sendVerificationEmail` was fire-and-forget; now awaited so failures surface as a 500 instead of silently succeeding with no email sent. Also corrected email argument to use the normalized form.
+
 ## [1.2.0] - 2026-03-27
 
 ### Fixed
