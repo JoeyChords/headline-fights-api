@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.3.0] - 2026-03-28
+
+### Added
+
+- Converted entire codebase from JavaScript to TypeScript — all classes, functions, models, routes, and the entry point now have full type coverage with no `any` types.
+- 136 unit tests across all layers using Vitest — classes, pure functions, IO functions, Mongoose models, and all 12 routes.
+- `tsconfig.json` — strict mode, `outDir: dist`, `module: commonjs`, `target: ES2020`.
+- `vitest.config.ts` — Node environment, no jsdom.
+- `eslint.config.js` — flat config with `@typescript-eslint` and `eslint-config-prettier`.
+- `.prettierrc` — consistent formatting rules.
+- `types.d.ts` — global `Express.User` augmentation and `express-session` `SessionData` augmentation for `passport`.
+- `TS_CONVERSION.md` — phased conversion plan and per-file checklist.
+
+### Changed
+
+- `npm run dev` now uses `tsx watch index.ts` — no build step required for local development.
+- `npm start` now runs `node dist/index.js` — the compiled output from `npm run build`.
+- `npm run build` compiles TypeScript to `dist/` via `tsc`.
+- Removed `nodemon` dependency — replaced by `tsx watch`.
+- Removed stale `README.txt` — `README.md` is the canonical doc.
+- Render build command: `npm install && npm run build`.
+- Render start command: `node dist/index.js`.
+
+### Fixed
+
+- Fixed `saveUserFeedback` — `Headline` and `HeadlineStat` were used without being imported; `statistics` variable was referenced outside its `if` block.
+- Fixed `calculateGuessAccuracy` — division by zero when a user had no pub1 or pub2 headlines produced NaN; guarded with length checks before dividing.
+- Fixed `getArticleTwo` — assigned scraped HTML to `articleTwo.html`, a property that does not exist on `Article`; replaced with a local variable.
+
 ## [1.2.1] - 2026-03-27
 
 ### Fixed
