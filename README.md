@@ -138,9 +138,13 @@ local and staging environments when `ORIGIN` is set appropriately.
 ## Useful Commands
 
 ```bash
-npm install
-npm run dev
-npm start
+npm install          # install dependencies
+npm run dev          # run locally with tsx watch (no build step)
+npm run build        # compile TypeScript → dist/
+npm start            # run compiled output (production)
+npm test             # run all tests
+npm run lint         # lint
+npm run format       # format
 ```
 
 ## Architecture
