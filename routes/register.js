@@ -16,7 +16,7 @@ const logger = winston.createLogger({
 });
 
 //Check for existing email, then make new user with encrypted password
-router.post("/", function (req, res) {
+router.post("/", async function (req, res) {
   let checkEmail = null;
   if (isEmail(req.body.email) && isStrongPassword(req.body.password)) {
     User.findOne({ email: normalizeEmail(req.body.email) })
@@ -39,10 +39,15 @@ router.post("/", function (req, res) {
             verification_code_datetime: new Date(),
           });
 
-          user.save().then(() => {
-            sendVerificationEmail(req.body.name, req.body.email, verificationCode);
-            logger.info("User saved.");
-            res.json({ available: "True", validEmail: "True" });
+          user.save().then(async () => {
+            try {
+              await sendVerificationEmail(req.body.name, normalizeEmail(req.body.email), verificationCode);
+              logger.info("User saved.");
+              res.json({ available: "True", validEmail: "True" });
+            } catch (err) {
+              logger.error("Failed to send verification email: " + err);
+              res.status(500).json({ error: "Failed to send verification email." });
+            }
           }).catch((err) => {
             logger.error(err);
             res.status(500).json({ error: "Failed to create account." });
