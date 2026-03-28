@@ -137,6 +137,7 @@ passport.serializeUser(function (user, cb) {
       id: user.id,
       username: user.name,
       email: user.email,
+      email_verified: user.email_verified,
     });
   });
 });
