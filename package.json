@@ -1,6 +1,6 @@
 {
   "name": "headline-fights",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Match the headline to the publication.",
   "main": "index.js",
   "engines": {

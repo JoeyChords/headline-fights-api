@@ -17,7 +17,7 @@ router.post("/", async function (req, res, next) {
   if (minutesElapsed < 15) {
     if (userDocument.verification_code === parseInt(req.body.code)) {
       //log user in
-      req.session.passport = { user: { id: userDocument._id, username: userDocument.name, email: userDocument.email } };
+      req.session.passport = { user: { id: userDocument._id, username: userDocument.name, email: userDocument.email, email_verified: true } };
       const verifyEmail = await User.findOneAndUpdate({ email: req.body.email }, { email_verified: true });
       return res.json({
         submitted_in_time: true,
